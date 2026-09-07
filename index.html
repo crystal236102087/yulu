@@ -355,13 +355,21 @@ let filterBookId = 'all';
 let currentDetailId = null;
 
 // ==================== 基础 ====================
+/* 数据规范化：确保 quotes / books 恒为数组（防止同步数据缺字段导致渲染崩溃） */
+function normalizeData(d) {
+  if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(defaultData));
+  return {
+    quotes: Array.isArray(d.quotes) ? d.quotes : [],
+    books: Array.isArray(d.books) ? d.books : [],
+  };
+}
 function loadData() {
   // 旧版「拾句」数据无损迁移到新版「余录」（仅当新 key 尚无数据时）
   if (!localStorage.getItem(STORE_KEY) && localStorage.getItem(OLD_STORE_KEY)) {
     try { localStorage.setItem(STORE_KEY, localStorage.getItem(OLD_STORE_KEY)); } catch (e) {}
   }
   const saved = localStorage.getItem(STORE_KEY);
-  if (saved) { try { data = JSON.parse(saved); } catch (e) {} }
+  if (saved) { try { data = normalizeData(JSON.parse(saved)); } catch (e) {} }
 }
 function saveData() {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
@@ -562,9 +570,9 @@ function renderMine() {
       </div>
       ${!hasToken ? `
       <!-- 第一步：输入 GitHub Token -->
-      <p class="text-xs text-inklight leading-relaxed mb-3">数据永久保存在你的 GitHub 私有仓库。先粘贴你的 GitHub Token（repo 权限），只需设置一次。</p>
+      <p class="text-xs text-inklight leading-relaxed mb-3">数据永久保存在你的 GitHub 私有仓库。先粘贴你的 GitHub Token（repo 权限），只需设置一次。换机迁移的用户直接粘贴「迁移口令」即可一步完成。</p>
       <div class="flex gap-2.5 mb-2">
-        <input id="sync-token-input" placeholder="粘贴 GitHub Token（ghp_ 开头）" autocapitalize="off" spellcheck="false"
+        <input id="sync-token-input" placeholder="粘贴 Token 或迁移口令（token|同步码）" autocapitalize="off" spellcheck="false"
           class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-paper border border-line text-xs font-bold placeholder:text-inklight/50 placeholder:font-normal" />
         <button onclick="syncSaveToken()" class="px-5 py-3 rounded-xl bg-ink text-paper text-sm font-bold active:scale-95 transition-transform shrink-0">保存</button>
       </div>
@@ -588,9 +596,10 @@ function renderMine() {
       </div>
       <div class="flex gap-2.5">
         <button onclick="syncNow(true)" class="flex-1 py-3 rounded-xl bg-ink text-paper text-sm font-bold tracking-[0.2em] active:scale-95 transition-transform">⟳ 立即同步</button>
-        <button onclick="syncUnbind()" class="px-4 py-3 rounded-xl bg-paper border border-line text-sm font-bold text-inklight active:scale-95 transition-transform">断开</button>
+        <button onclick="syncMigrate()" class="px-4 py-3 rounded-xl bg-cinnabar text-[#fff6ec] text-sm font-bold active:scale-95 transition-transform shrink-0">换机迁移</button>
+        <button onclick="syncUnbind()" class="px-4 py-3 rounded-xl bg-paper border border-line text-sm font-bold text-inklight active:scale-95 transition-transform shrink-0">断开</button>
       </div>
-      <p class="text-[10px] text-inklight/70 mt-3 leading-relaxed">数据保存在 GitHub 私有仓库，永久可靠。改动会自动上传；打开 App 时自动拉取最新。多设备同时编辑时，以最后同步的为准。</p>
+      <p class="text-[10px] text-inklight/70 mt-3 leading-relaxed">数据保存在 GitHub 私有仓库，永久可靠。改动会自动上传；打开 App 时自动拉取最新。多设备同时编辑时，以最后同步的为准。换新手机时点「换机迁移」复制口令，新手机粘贴一次即可完成全部设置。</p>
       <button onclick="syncClearToken()" class="w-full mt-2 text-[10px] text-inklight/70 underline underline-offset-2">清除 Token 并解除绑定</button>
       `}
     </div>`;
@@ -1105,7 +1114,19 @@ async function ghPutFile(code, token, obj, sha) {
 async function syncSaveToken() {
   const input = document.getElementById('sync-token-input');
   if (!input) return;
-  const token = (input.value || '').trim();
+  let raw = (input.value || '').trim();
+  /* 迁移口令格式：token|同步码 —— 粘贴一次完成全部设置 */
+  let migrateCode = null;
+  if (raw.includes('|')) {
+    const parts = raw.split('|');
+    raw = parts[0].trim();
+    migrateCode = parts[1].trim().toUpperCase();
+    if (!/^YL-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(migrateCode)) {
+      showToast('迁移口令里同步码格式不对（YL-XXXX-XXXX），已按普通 Token 保存');
+      migrateCode = null;
+    }
+  }
+  const token = raw;
   if (token.length < 20) { showToast('Token 格式看起来不对'); return; }
   if (syncBusy) return; syncBusy = true;
   try {
@@ -1113,10 +1134,27 @@ async function syncSaveToken() {
     if (!res.ok) throw new Error(res.status === 401 ? 'Token 无效或已过期' : '验证失败 HTTP ' + res.status);
     const s = getSync() || {};
     setSync(Object.assign(s, { token }));
+    if (migrateCode) {
+      showToast('Token 已保存，正在绑定同步码…');
+      render();
+      syncBusy = false;
+      await syncJoin(migrateCode);
+      return;
+    }
     showToast('Token 已保存 ✓');
     render();
   } catch (e) { showToast('保存失败：' + e.message); }
   finally { syncBusy = false; }
+}
+
+/* 换机迁移：一键复制「Token|同步码」口令，新手机粘贴一次即可 */
+function syncMigrate() {
+  const s = getSync();
+  if (!s || !s.token || !s.code) return;
+  const cmd = s.token + '|' + s.code;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmd).then(() => showToast('迁移口令已复制 ✓ 换手机时粘贴一次即可')).catch(() => { prompt('请手动复制这段迁移口令：', cmd); });
+  } else { prompt('请手动复制这段迁移口令：', cmd); }
 }
 
 /* 清除 Token */
@@ -1147,20 +1185,25 @@ async function syncCreate() {
   finally { syncBusy = false; }
 }
 
-/* 输入同步码绑定（新设备） */
-async function syncJoin() {
-  const input = document.getElementById('sync-code-input');
-  if (!input) return;
+/* 输入同步码绑定（新设备）；migrateCode 由迁移口令自动传入 */
+async function syncJoin(migrateCode) {
   const s = getSync();
   if (!s || !s.token) { showToast('请先保存 GitHub Token'); return; }
-  const code = (input.value || '').trim().toUpperCase();
+  let code;
+  if (migrateCode) {
+    code = String(migrateCode).trim().toUpperCase();
+  } else {
+    const input = document.getElementById('sync-code-input');
+    if (!input) return;
+    code = (input.value || '').trim().toUpperCase();
+  }
   if (!/^YL-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { showToast('同步码格式：YL-XXXX-XXXX'); return; }
   if (syncBusy) return; syncBusy = true;
   try {
     const file = await ghGetFile(code, s.token);
     if (file) {
       if (file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
-        data = file.data.payload;
+        data = normalizeData(file.data.payload);
         try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
       }
       setSync({ token: s.token, code, sha: file.sha, lastSyncAt: file.data.updatedAt || 0 });
@@ -1191,7 +1234,7 @@ async function syncPush() {
       // 远端被其他设备改过：拉最新比较时间戳
       const file = await ghGetFile(s.code, s.token);
       if (file && (file.data.updatedAt || 0) > updatedAt && file.data.payload) {
-        data = file.data.payload;
+        data = normalizeData(file.data.payload);
         try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (er) {}
         setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: file.data.updatedAt });
         syncDirty = false; render();
@@ -1211,7 +1254,7 @@ async function syncNow(manual) {
     const file = await ghGetFile(s.code, s.token);
     const remoteAt = file ? (file.data.updatedAt || 0) : 0;
     if (file && remoteAt > s.lastSyncAt && file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
-      data = file.data.payload;
+      data = normalizeData(file.data.payload);
       try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
       setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: remoteAt });
       syncDirty = false;
