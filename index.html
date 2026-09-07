@@ -162,8 +162,8 @@
           <div class="flex items-center gap-2.5">
             <!-- 方章：白字「余」 -->
             <span class="flex items-center justify-center shrink-0"
-              style="width:42px;height:42px;background:#c0392b;border-radius:8px;box-shadow:0 2px 6px rgba(150,40,30,0.4)">
-              <span class="brand-title text-[25px] leading-none" style="color:#fdf6ec">余</span>
+              style="width:31px;height:31px;background:#c0392b;border-radius:6px;box-shadow:0 2px 5px rgba(150,40,30,0.38)">
+              <span class="brand-title text-[19px] leading-none" style="color:#fdf6ec">余</span>
             </span>
             <!-- 大字「余录」 -->
             <span class="brand-title text-[34px] leading-none tracking-[0.06em]"
@@ -286,6 +286,47 @@
           </div>
         </div>
         <div id="detail-body" class="px-6 py-5"></div>
+      </div>
+    </div>
+
+    <!-- 新增书目弹窗 -->
+    <div id="book-modal" class="hidden absolute inset-0 z-50">
+      <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeBookModal()"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[90%] overflow-y-auto slide-up border-t-2 border-cinnabar/30">
+        <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-md bg-indigoblue flex items-center justify-center"><span class="text-white brand-title text-lg leading-none">书</span></div>
+            <h3 class="font-black text-lg tracking-wide">新增书目</h3>
+          </div>
+          <button onclick="closeBookModal()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
+        </div>
+        <div class="px-6 py-5 space-y-5">
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">书名 <span class="text-cinnabar">✦</span></label>
+            <input id="book-name" type="text" placeholder="如：庄子" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] font-bold">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">作者</label>
+              <input id="book-author" type="text" placeholder="如：庄周" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">分类</label>
+              <input id="book-category" type="text" list="book-cat-list" placeholder="如：国学经典" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm">
+              <datalist id="book-cat-list"></datalist>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">书脊颜色</label>
+            <div id="book-color-pick" class="flex gap-2.5 flex-wrap"></div>
+          </div>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
+            <input id="book-finished" type="checkbox" class="w-5 h-5 accent-[#9c7c35]">
+            <span class="text-sm font-bold">已读完</span>
+            <span class="text-[10px] text-inklight">（没勾的话书脊上会标「在读」）</span>
+          </label>
+          <button onclick="saveBook()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#3a5666] to-[#2a3f4c] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-card mb-8">上 架</button>
+        </div>
       </div>
     </div>
 
@@ -492,7 +533,10 @@ function renderShelf() {
               const n = data.quotes.filter(q => q.bookId === b.id).length;
               const h = 138 + (b.name.length % 3) * 8; // 高低错落
               return `
-              <button onclick="filterBookId='${b.id}';switchTab('quotes')" class="active:scale-95 transition-transform" style="width:86px">
+              <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
+                onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
+                ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
+                class="active:scale-95 transition-transform" style="width:86px">
                 <div class="book-spine mx-auto flex justify-center relative" style="background:linear-gradient(160deg,${b.color},${b.color}d0);height:${h}px">
                   <span class="v-text text-[#fff6ec] font-bold text-[13px] pt-3.5 pb-3.5" style="text-shadow:0 1px 2px rgba(0,0,0,0.3)">${b.name}</span>
                   ${b.finished
@@ -512,7 +556,7 @@ function renderShelf() {
       </div>`;
     }).join('')}
     </div>
-    <button onclick="showToast('添加书目功能开发中')" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em]">＋ 新 增 书 目</button>
+    <button onclick="openBookModal()" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em] active:scale-[0.98] transition-transform">＋ 新 增 书 目</button>
   `;
 }
 
@@ -745,6 +789,77 @@ function openAddModal() {
   document.getElementById('add-modal').classList.remove('hidden');
 }
 function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+// ==================== 新增书目 ====================
+const BOOK_COLORS = ['#8e3b2c', '#3a5666', '#72855f', '#9c7c35', '#5b4a6b', '#6b4a3a', '#4a6670', '#8a6d3b'];
+let pickedBookColor = null;
+
+function openBookModal() {
+  document.getElementById('book-name').value = '';
+  document.getElementById('book-author').value = '';
+  document.getElementById('book-category').value = '';
+  document.getElementById('book-finished').checked = false;
+  // 分类候选 = 现有书目的分类
+  const cats = [...new Set(data.books.map(b => b.category))];
+  document.getElementById('book-cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+  // 颜色：默认选「书架上用得最少」的颜色，让书脊更错落
+  const use = {};
+  data.books.forEach(b => { use[b.color] = (use[b.color] || 0) + 1; });
+  const sorted = [...BOOK_COLORS].sort((a, b) => (use[a] || 0) - (use[b] || 0));
+  pickedBookColor = sorted[0];
+  document.getElementById('book-color-pick').innerHTML = BOOK_COLORS.map(c => `
+    <button type="button" onclick="pickBookColor('${c}')" data-color="${c}"
+      class="w-9 h-9 rounded-lg border-2 active:scale-90 transition-transform"
+      style="background:${c};border-color:${c === pickedBookColor ? '#2a2622' : 'transparent'}"></button>`).join('');
+  document.getElementById('book-modal').classList.remove('hidden');
+}
+function closeBookModal() { document.getElementById('book-modal').classList.add('hidden'); }
+function pickBookColor(c) {
+  pickedBookColor = c;
+  document.querySelectorAll('#book-color-pick button').forEach(b => {
+    b.style.borderColor = (b.dataset.color === c) ? '#2a2622' : 'transparent';
+  });
+}
+function saveBook() {
+  const name = document.getElementById('book-name').value.trim();
+  if (!name) { showToast('书名还没写'); return; }
+  const bare = (s) => s.replace(/[《》\s]/g, '');
+  if (data.books.some(b => bare(b.name) === bare(name))) { showToast('书架上已经有这本书了'); return; }
+  data.books.push({
+    id: 'b' + Date.now(),
+    name,
+    author: document.getElementById('book-author').value.trim() || '佚名',
+    category: document.getElementById('book-category').value.trim() || '未分类',
+    color: pickedBookColor || BOOK_COLORS[data.books.length % BOOK_COLORS.length],
+    finished: document.getElementById('book-finished').checked,
+    finishDate: document.getElementById('book-finished').checked ? new Date().toISOString().slice(0, 10) : '',
+  });
+  saveData();
+  closeBookModal();
+  render();
+  showToast('已上架「' + name + '」✦');
+}
+
+/* 长按书脊 = 移除书目（摘录保留，只是不再归入该书） */
+let bookPressTimer = null, bookPressSuppressClick = false;
+function bookPressStart(id) {
+  bookPressSuppressClick = false;
+  const book = data.books.find(b => b.id === id);
+  if (!book) return;
+  bookPressTimer = setTimeout(() => {
+    bookPressSuppressClick = true;
+    const n = data.quotes.filter(q => q.bookId === id).length;
+    if (confirm('把「' + book.name + '」从书架上移除？\n' + (n ? '书里的 ' + n + ' 条摘录会保留，只是不再归到这本书名下。' : ''))) {
+      data.books = data.books.filter(b => b.id !== id);
+      if (filterBookId === id) filterBookId = 'all';
+      saveData();
+      render();
+      showToast('已移除「' + book.name + '」');
+    }
+  }, 600);
+}
+function bookPressEnd() { clearTimeout(bookPressTimer); }
+
 function saveQuote() {
   const original = document.getElementById('add-original').value.trim();
   if (!original) { showToast('请先抄录原文'); return; }
