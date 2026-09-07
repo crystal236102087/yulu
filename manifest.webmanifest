@@ -1,0 +1,23 @@
+{
+  "name": "余录 · 读书摘录",
+  "short_name": "余录",
+  "description": "一款中国古典风格的读书摘录与笔记应用，收藏佳句、记录所思。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f2e6",
+  "theme_color": "#f7f2e6",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

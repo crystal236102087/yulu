@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>余录 · 读书摘录</title>
+  <!-- PWA / 移动端应用图标（龙藏体，与页面字体一致） -->
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f7f2e6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="余录">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 书法主字体：龙藏 Long Cang（飘逸行书，jsdelivr CDN） -->
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/long-cang/index.css" rel="stylesheet">
+  <!-- 毛笔楷书：马善政 Ma Shan Zheng（品牌大字专用，浓墨毛笔质感） -->
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/ma-shan-zheng/index.css" rel="stylesheet">
+  <!-- 兜底书法体 + 正文宋体（走 jsdelivr CDN，比 Google Fonts 更稳、国内可达） -->
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/zhi-mang-xing/index.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc/index.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc/600.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc/700.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc/900.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: '#f7f2e6',
+            card: '#fffdf8',
+            ink: '#2a2622',
+            inklight: '#7c7368',
+            cinnabar: '#a63a2b',
+            indigoblue: '#3a5666',
+            bamboo: '#72855f',
+            gold: '#9c7c35',
+            line: '#e3d9c4',
+          },
+          fontFamily: {
+            serif: ['"Noto Serif SC"', 'Songti SC', 'SimSun', 'serif'],
+            brush: ['"Long Cang"', '"Zhi Mang Xing"', '"Ma Shan Zheng"', 'cursive'],
+          },
+          boxShadow: {
+            'paper': '0 1px 3px rgba(42,38,34,0.05), 0 6px 18px rgba(42,38,34,0.06)',
+            'card': '0 2px 6px rgba(42,38,34,0.06), 0 12px 28px rgba(42,38,34,0.09)',
+            'float': '0 10px 32px rgba(166,58,43,0.32)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif; }
+    /* 宣纸纤维纹理 */
+    .texture-bg {
+      background-color: #f7f2e6;
+      background-image:
+        radial-gradient(ellipse at 15% 20%, rgba(156,124,53,0.045) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 80%, rgba(58,86,102,0.04) 0%, transparent 55%),
+        repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(42,38,34,0.012) 3px, rgba(42,38,34,0.012) 4px),
+        repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(42,38,34,0.012) 3px, rgba(42,38,34,0.012) 4px);
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .fade-in { animation: fadeIn 0.4s ease both; }
+    .fade-in:nth-child(2) { animation-delay: .06s; }
+    .fade-in:nth-child(3) { animation-delay: .12s; }
+    .fade-in:nth-child(4) { animation-delay: .18s; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+    .slide-up { animation: slideUp 0.32s cubic-bezier(0.32,0.72,0,1) both; }
+    .scroll-hide::-webkit-scrollbar { display: none; }
+    .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    /* 笺纸卡片：双线边框 + 角部装饰 */
+    .letter-card {
+      position: relative;
+      background: linear-gradient(135deg, #fffdf6 0%, #faf5e9 100%);
+      border: 1px solid #e8dfc9;
+      outline: 1px solid rgba(166,58,43,0.12);
+      outline-offset: -5px;
+      box-shadow: 0 1px 3px rgba(42,38,34,0.05), 0 6px 18px rgba(42,38,34,0.06);
+    }
+    .corner-deco { position:absolute; width:14px; height:14px; border-color: rgba(166,58,43,0.4); }
+    .v-text { writing-mode: vertical-rl; letter-spacing: 0.28em; }
+    /* 书脊立体感 */
+    .book-spine {
+      border-radius: 3px 6px 6px 3px;
+      box-shadow: inset 4px 0 6px -3px rgba(0,0,0,0.35), inset -2px 0 3px -1px rgba(255,255,255,0.25), 2px 3px 8px rgba(42,38,34,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .book-spine::before { /* 书脊装订线 */
+      content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px;
+      background: rgba(255,255,255,0.28);
+    }
+    .book-spine::after { /* 烫金线 */
+      content: ''; position: absolute; left: 9px; top: 8%; bottom: 8%; width: 1px;
+      background: rgba(255,255,255,0.16);
+    }
+    /* 木质书架层板 */
+    .shelf-board {
+      height: 10px;
+      background: linear-gradient(180deg, #b08d5e 0%, #96754a 45%, #7d6039 100%);
+      border-radius: 2px;
+      box-shadow: 0 3px 6px rgba(42,38,34,0.28), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    .seal-tag {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #a63a2b; color: #fff6ec;
+      border-radius: 3px; font-size: 10px; padding: 2px 7px; font-weight: 700; letter-spacing: 0.15em;
+      box-shadow: 0 1px 3px rgba(166,58,43,0.35);
+    }
+    .ghost-seal {
+      display:inline-flex; align-items:center; justify-content:center;
+      border: 1.5px solid #a63a2b; color:#a63a2b; border-radius:3px;
+      font-size:10px; padding:1px 6px; font-weight:700; letter-spacing:0.15em;
+    }
+    .num-badge {
+      font-variant-numeric: tabular-nums;
+    }
+    .tab-btn { transition: all .2s; }
+    .tab-btn.active .tab-icon { transform: scale(1.18) translateY(-1px); }
+    .tab-btn.active .tab-label { color: #a63a2b; }
+    .tab-btn.active::after {
+      content:''; position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+      width:4px; height:4px; border-radius:50%; background:#a63a2b;
+    }
+    .big-quote { font-family: 'Long Cang', 'Zhi Mang Xing', 'Ma Shan Zheng', serif; color: rgba(166,58,43,0.14); line-height: 0.8; }
+    .brush-title { font-family: 'Long Cang', 'Zhi Mang Xing', 'Ma Shan Zheng', serif; }
+    /* 品牌大字：毛笔楷书（马善政），浓墨笔锋 */
+    .brand-title { font-family: 'Ma Shan Zheng', 'Long Cang', 'Zhi Mang Xing', serif; }
+    input, textarea, select { outline: none; font-family: inherit; }
+    input:focus, textarea:focus { border-color: #a63a2b !important; }
+    .chip-on { background:#2a2622 !important; color:#f6f1e5 !important; border-color:#2a2622 !important; }
+    #toast.toast-show { transform:translateX(-50%) translateY(0) !important; }
+  </style>
+</head>
+<body class="texture-bg text-ink h-screen overflow-hidden">
+  <div class="max-w-md mx-auto h-full flex flex-col relative shadow-2xl">
+
+    <!-- ==================== 顶栏 ==================== -->
+    <header class="px-5 pt-5 pb-2.5 shrink-0 bg-gradient-to-b from-paper via-paper to-transparent relative z-10">
+      <!-- 背景梅枝：淡淡的墨梅，作宣纸底纹 -->
+      <svg class="absolute right-0 top-5 w-[110px] h-[100px] pointer-events-none opacity-[0.15]" viewBox="0 0 150 130" fill="none">
+        <path d="M150 20 C 128 26, 112 36, 100 50 M100 50 C 90 62, 80 72, 72 78 M100 50 C 108 60, 112 72, 112 84"
+          stroke="#3a2a22" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M88 62 C 82 66, 76 70, 70 72 M78 72 C 72 74, 66 74, 60 72 M112 84 C 108 86, 104 86, 100 84"
+          stroke="#4a362b" stroke-width="2" stroke-linecap="round"/>
+        <!-- 花 -->
+        <g fill="#a63a2b">
+          <path d="M70 72 q -3 -6 2 -8 q 5 -1 4 5 q 4 -3 6 1 q 1 4 -4 5 q 2 4 -3 5 q -4 0 -3 -5 q -5 2 -6 -3 z"/>
+          <path d="M112 84 q -2 -5 2 -6 q 4 -1 3 4 q 3 -2 4 1 q 1 3 -3 4 q 2 3 -2 4 q -3 0 -2 -4 q -4 2 -5 -2 z"/>
+          <circle cx="60" cy="72" r="3"/><circle cx="100" cy="84" r="2.6"/>
+        </g>
+        <!-- 花苞 -->
+        <circle cx="78" cy="72" r="1.6" fill="#a63a2b" opacity="0.8"/>
+        <circle cx="124" cy="70" r="1.6" fill="#a63a2b" opacity="0.7"/>
+      </svg>
+      <div class="flex items-start justify-between">
+        <!-- 左：品牌。方章在左，「余录」大字在其右，下方通栏小字「读书摘录」 -->
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2.5">
+            <!-- 方章：白字「余」 -->
+            <span class="flex items-center justify-center shrink-0"
+              style="width:42px;height:42px;background:#c0392b;border-radius:8px;box-shadow:0 2px 6px rgba(150,40,30,0.4)">
+              <span class="brand-title text-[25px] leading-none" style="color:#fdf6ec">余</span>
+            </span>
+            <!-- 大字「余录」 -->
+            <span class="brand-title text-[34px] leading-none tracking-[0.06em]"
+              style="color:#1f1a16;text-shadow:0 2px 5px rgba(42,38,34,0.12)">余录</span>
+          </div>
+          <!-- 下方通栏小字：读书摘录 -->
+          <p class="text-[10px] text-inklight tracking-[0.4em] mt-2 shrink-0 whitespace-nowrap">读　书　摘　录</p>
+        </div>
+        <div class="text-right pt-1 space-y-1.5">
+          <p class="text-[11px] text-inklight num-badge"><span class="text-ink font-black text-base" id="header-count">0</span> 摘</p>
+          <p class="text-[11px] text-inklight num-badge"><span class="text-ink font-black text-base" id="header-books">0</span> 书</p>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-2">
+        <div class="h-px flex-1 bg-gradient-to-r from-transparent via-line to-line/40"></div>
+        <span class="text-[9px] text-inklight/70 tracking-[0.3em]" id="header-date">—</span>
+        <div class="h-px flex-1 bg-gradient-to-l from-transparent via-line to-line/40"></div>
+      </div>
+    </header>
+
+    <!-- ==================== 主内容 ==================== -->
+    <main class="flex-1 overflow-y-auto scroll-hide px-5 pb-36" id="main-content"></main>
+
+    <!-- ==================== 底部导航 ==================== -->
+    <nav class="absolute bottom-0 inset-x-0 bg-card/95 backdrop-blur-md border-t border-line">
+      <div class="flex items-center justify-around px-2 pt-2 pb-3">
+        <button class="tab-btn relative flex flex-col items-center gap-1 py-1 px-5" data-tab="quotes" onclick="switchTab('quotes')">
+          <span class="tab-icon text-[22px] transition-transform">📜</span>
+          <span class="tab-label text-[10px] font-bold text-inklight tracking-[0.25em]">文摘</span>
+        </button>
+        <button class="tab-btn relative flex flex-col items-center gap-1 py-1 px-5" data-tab="shelf" onclick="switchTab('shelf')">
+          <span class="tab-icon text-[22px] transition-transform">📚</span>
+          <span class="tab-label text-[10px] font-bold text-inklight tracking-[0.25em]">书架</span>
+        </button>
+        <button onclick="openAddModal()" class="w-[54px] h-[54px] -mt-7 rounded-full bg-gradient-to-b from-[#b8452f] to-[#96301f] text-white shadow-float border-[3px] border-paper flex items-center justify-center active:scale-95 transition-transform">
+          <span class="brush-title text-[20px] leading-none mt-0.5">录</span>
+        </button>
+        <button class="tab-btn relative flex flex-col items-center gap-1 py-1 px-5" data-tab="maxims" onclick="switchTab('maxims')">
+          <span class="tab-icon text-[22px] transition-transform">🪷</span>
+          <span class="tab-label text-[10px] font-bold text-inklight tracking-[0.25em]">格言</span>
+        </button>
+        <button class="tab-btn relative flex flex-col items-center gap-1 py-1 px-5" data-tab="mine" onclick="switchTab('mine')">
+          <span class="tab-icon text-[22px] transition-transform">🕯️</span>
+          <span class="tab-label text-[10px] font-bold text-inklight tracking-[0.25em]">我的</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- 添加文摘弹窗 -->
+    <div id="add-modal" class="hidden absolute inset-0 z-50">
+      <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeAddModal()"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[90%] overflow-y-auto slide-up border-t-2 border-cinnabar/30">
+        <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-md bg-cinnabar flex items-center justify-center"><span class="text-white brush-title text-lg leading-none">摘</span></div>
+            <h3 class="font-black text-lg tracking-wide">新摘一句</h3>
+          </div>
+          <button onclick="closeAddModal()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
+        </div>
+        <div class="px-6 py-5 space-y-5">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">选书</label>
+              <select id="add-book" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm font-bold"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">出处</label>
+              <input id="add-source" type="text" placeholder="《论语·阳货》" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">原文 <span class="text-cinnabar">✦</span></label>
+            <textarea id="add-original" rows="3" placeholder="抄录打动你的句子…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] leading-relaxed resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">理解</label>
+            <textarea id="add-understanding" rows="3" placeholder="用自己的话，说说它是什么意思…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm leading-relaxed resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">举例</label>
+            <textarea id="add-example" rows="3" placeholder="生活中见过或想过的例子…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm leading-relaxed resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">注意点</label>
+            <textarea id="add-note" rows="2" placeholder="这句话要留意的地方…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm leading-relaxed resize-none"></textarea>
+          </div>
+          <!-- 相似佳句 · 自动搜罗 -->
+          <div class="pt-1">
+            <label class="flex items-center justify-between mb-2.5">
+              <span class="text-[11px] font-bold text-inklight tracking-[0.2em]">相似佳句 <span class="text-cinnabar normal-case tracking-normal">·</span> <span class="text-cinnabar">自动搜罗</span></span>
+              <button type="button" id="btn-similar" onclick="autoFindSimilar()"
+                class="text-[11px] font-bold text-cinnabar border border-cinnabar/40 rounded-full px-3 py-1.5 bg-cinnabar/[0.06] active:scale-95 transition-transform flex items-center gap-1">
+                <span id="btn-similar-ic">🔍</span><span id="btn-similar-tx">搜罗相似句</span>
+              </button>
+            </label>
+            <p class="text-[10px] text-inklight/80 mb-2.5 -mt-1">依你抄录的这句话，自动搜罗 2-3 句意思相近的佳句（古文 / 英谚）</p>
+            <!-- 搜罗结果容器 -->
+            <div id="auto-similar" class="space-y-2.5"></div>
+            <!-- 手动补充 -->
+            <div class="mt-4">
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">相似佳句 · 手动补充 <span class="text-inklight font-normal">（每行一条，可留空）</span></label>
+              <textarea id="add-related" rows="3" placeholder="古文｜大人者，言不必信…——《孟子》&#10;English｜Circumstances alter cases." class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm leading-relaxed resize-none"></textarea>
+              <p class="text-[10px] text-inklight mt-1.5">以「古文｜」或「English｜」开头可自动分类，用——注明出处</p>
+            </div>
+          </div>
+          <button onclick="saveQuote()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#b8452f] to-[#96301f] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-float mb-8">收 入 书 囊</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div id="detail-modal" class="hidden absolute inset-0 z-50">
+      <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeDetail()"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[92%] overflow-y-auto slide-up">
+        <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
+          <h3 class="font-black text-lg tracking-wide">文摘详注</h3>
+          <div class="flex gap-2">
+            <button id="detail-del" class="w-9 h-9 rounded-full bg-paper border border-cinnabar/30 text-cinnabar font-bold text-sm">删</button>
+            <button onclick="closeDetail()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
+          </div>
+        </div>
+        <div id="detail-body" class="px-6 py-5"></div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="absolute top-24 left-1/2 bg-ink text-paper px-6 py-3 rounded-full text-sm font-bold shadow-card z-[60] tracking-wider"
+         style="transform:translateX(-50%) translateY(-140px);transition:transform .3s ease,opacity .3s ease;max-width:80%;white-space:nowrap"> 
+      <span id="toast-msg"></span>
+    </div>
+  </div>
+
+<script>
+// ==================== 数据 ====================
+const STORE_KEY = 'yulu-reading-notes';
+const OLD_STORE_KEY = 'shiju-reading-notes'; // 旧版拾句数据，用于无损迁移
+
+const defaultData = {
+  books: [
+    { id: 'b1', name: '论语', author: '孔子及弟子', category: '国学经典', color: '#8e3b2c', finished: true, finishDate: '2026-08-20' },
+    { id: 'b2', name: '孟子', author: '孟子及弟子', category: '国学经典', color: '#3a5666', finished: false, finishDate: '' },
+    { id: 'b3', name: '平凡的世界', author: '路遥', category: '现当代文学', color: '#72855f', finished: true, finishDate: '2026-07-15' },
+    { id: 'b4', name: '朝花夕拾', author: '鲁迅', category: '现代散文', color: '#9c7c35', finished: true, finishDate: '2026-06-30' },
+  ],
+  quotes: [
+    {
+      id: 'q1', bookId: 'b1',
+      original: '子曰：好信不好学，其蔽也贼。',
+      source: '《论语·阳货》',
+      understanding: '死守信用而不懂权衡变通，分不清大义和小诺，反而做出害人害己的事。',
+      example: '有的人很重义气，朋友答应了什么就要办到，哪怕这件事本身不对，也要死守承诺，为了"守信"去帮人隐瞒、帮人做不妥的事——这就是好信不好学，其蔽也贼。',
+      note: '不是这个人本性不诚信、本性邪恶，而是单一的德行，缺少学识、是非观来权衡，就走偏了。',
+      related: [
+        { type: '古文', text: '大人者，言不必信，行不必果，惟义所在。', source: '《孟子·离娄下》' },
+        { type: '古文', text: '言必信，行必果，硁硁然小人哉。', source: '《论语·子路》' },
+        { type: 'English', text: 'The letter killeth, but the spirit giveth life.', source: '《圣经·哥林多后书》' },
+        { type: 'English', text: 'Circumstances alter cases.', source: 'English Proverb' },
+      ],
+      createdAt: Date.now() - 86400000 * 2,
+    },
+    {
+      id: 'q2', bookId: 'b3',
+      original: '生活不能等待别人来安排，要自己去争取和奋斗。',
+      source: '《平凡的世界》第一部',
+      understanding: '命运握在自己手里，主动折腾好过被动等待。',
+      example: '孙少平不肯留在双水村守着安稳日子，宁愿去黄原揽工、下煤矿，苦是苦，但每一分都是自己挣来的底气。',
+      note: '争取不等于蛮干，方向和坚持同样重要。',
+      related: [
+        { type: 'English', text: 'The best way to predict the future is to create it.', source: 'Abraham Lincoln（常引）' },
+      ],
+      createdAt: Date.now() - 86400000 * 5,
+    },
+    {
+      id: 'q3', bookId: 'b4',
+      original: '一个人做到只剩了回忆的时候，生涯大概总要算是无聊了罢。',
+      source: '《朝花夕拾·小引》',
+      understanding: '人要一直往前走、有新鲜的事做，光靠回忆过日子，日子就停摆了。',
+      example: '退休后有人天天翻老照片感叹当年勇，也有人学画画、种花、交新朋友——后者把日子过成了新的回忆。',
+      note: '回忆值得珍藏，但不能当作生活的全部燃料。',
+      related: [],
+      createdAt: Date.now() - 86400000 * 9,
+    },
+  ],
+};
+
+let data = JSON.parse(JSON.stringify(defaultData));
+let currentTab = 'quotes';
+let filterBookId = 'all';
+let currentDetailId = null;
+
+// ==================== 基础 ====================
+function loadData() {
+  // 旧版「拾句」数据无损迁移到新版「余录」（仅当新 key 尚无数据时）
+  if (!localStorage.getItem(STORE_KEY) && localStorage.getItem(OLD_STORE_KEY)) {
+    try { localStorage.setItem(STORE_KEY, localStorage.getItem(OLD_STORE_KEY)); } catch (e) {}
+  }
+  const saved = localStorage.getItem(STORE_KEY);
+  if (saved) { try { data = JSON.parse(saved); } catch (e) {} }
+}
+function saveData() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  syncDirty = true;          // 标记有未推送修改
+  scheduleSyncPush();         // 已绑定同步码则自动推送（防抖）
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('toast-show');
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => t.classList.remove('toast-show'), 1800);
+}
+function fmtDate(ts) { const d = new Date(ts); return `${d.getMonth()+1}月${d.getDate()}日`; }
+
+// ==================== 渲染调度 ====================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  render();
+  document.getElementById('main-content').scrollTop = 0;
+}
+function render() {
+  const main = document.getElementById('main-content');
+  if (currentTab === 'quotes') main.innerHTML = renderQuotes();
+  else if (currentTab === 'shelf') main.innerHTML = renderShelf();
+  else if (currentTab === 'maxims') main.innerHTML = renderMaxims();
+  else if (currentTab === 'mine') main.innerHTML = renderMine();
+  document.getElementById('header-count').textContent = data.quotes.length;
+  document.getElementById('header-books').textContent = data.books.length;
+  const now = new Date();
+  document.getElementById('header-date').textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}`;
+  if (currentTab === 'quotes') renderDaily(); // 首页顶部今日卡片（异步数据到了就填）
+}
+
+// ---------- 文摘页：笺纸卡片 ----------
+function renderQuotes() {
+  const quotes = filterBookId === 'all' ? data.quotes : data.quotes.filter(q => q.bookId === filterBookId);
+  const chips = [{ id: 'all', name: '全部' }, ...data.books].map(b => `
+    <button onclick="filterBookId='${b.id}';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card text-inklight transition-all ${filterBookId === b.id ? 'chip-on' : ''}">${b.name}<span class="opacity-50 ml-1 num-badge">${b.id==='all'?data.quotes.length:data.quotes.filter(q=>q.bookId===b.id).length}</span></button>
+  `).join('');
+
+  return `
+    <div id="daily-card"></div>
+    <div class="flex gap-2 overflow-x-auto scroll-hide pb-4 -mt-1">${chips}</div>
+    ${quotes.length === 0 ? `
+      <div class="text-center py-24 text-inklight fade-in">
+        <div class="brush-title text-7xl opacity-25 mb-3">静</div>
+        <p class="text-sm font-bold">尚无文摘</p>
+        <p class="text-xs mt-1.5 opacity-60 tracking-widest">点下方朱红按钮 摘下第一句</p>
+      </div>` : ''}
+    <div class="space-y-5">
+      ${quotes.map(q => renderQuoteCard(q)).join('')}
+    </div>
+  `;
+}
+
+function renderQuoteCard(q) {
+  const book = data.books.find(b => b.id === q.bookId);
+  const c = book ? book.color : '#8e3b2c';
+  const relatedCount = (q.related || []).length;
+  const meta = [];
+  if (q.example) meta.push('举例');
+  if (q.note) meta.push('注意');
+  return `
+    <div class="letter-card rounded-2xl overflow-hidden cursor-pointer fade-in" onclick="openDetail('${q.id}')">
+      <!-- 左书签色带 + 角部装饰 -->
+      <span class="corner-deco border-l-2 border-t-2" style="left:8px;top:8px"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:8px;bottom:8px"></span>
+      <div class="flex">
+        <div class="w-[7px] shrink-0" style="background:linear-gradient(180deg,${c},${c}aa)"></div>
+        <div class="flex-1 px-5 py-4 min-w-0">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="seal-tag" style="background:${c}">${book ? book.name : '未分类'}</span>
+              <span class="text-[10px] text-inklight num-badge">${fmtDate(q.createdAt)}</span>
+            </div>
+            ${relatedCount ? `<span class="ghost-seal" style="border-color:${c};color:${c}">佳句 ×${relatedCount}</span>` : ''}
+          </div>
+          <div class="relative">
+            <span class="big-quote absolute -left-1 -top-3 text-[44px] select-none">「</span>
+            <p class="text-[15.5px] leading-[1.9] font-bold pl-5 pt-1">${q.original}</p>
+            <p class="text-right text-[11px] text-inklight mt-2 pr-1">—— ${q.source}</p>
+          </div>
+          ${q.understanding ? `
+          <div class="mt-3.5 relative pl-3.5">
+            <div class="absolute left-0 top-1 bottom-1 w-[2px] rounded" style="background:linear-gradient(180deg,${c},${c}44)"></div>
+            <p class="text-xs leading-[1.9] text-inklight"><span class="ghost-seal mr-1.5" style="border-color:${c}99;color:${c}">理解</span>${q.understanding}</p>
+          </div>` : ''}
+          ${meta.length ? `
+          <div class="flex gap-2 mt-3.5 pt-3 border-t border-dashed border-line">
+            ${meta.map(m => `<span class="text-[10px] font-bold text-inklight bg-paper border border-line rounded-full px-2.5 py-0.5">${m}</span>`).join('')}
+            <span class="ml-auto text-[10px] text-cinnabar/60 font-bold">点开详注 →</span>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ---------- 书架页：真实书架 ----------
+function renderShelf() {
+  const cats = [...new Set(data.books.map(b => b.category))];
+  return `
+    <div class="space-y-7">
+    ${cats.map(cat => {
+      const books = data.books.filter(b => b.category === cat);
+      return `
+      <div class="fade-in">
+        <div class="flex items-baseline gap-2.5 mb-4">
+          <span class="w-[3px] h-4 bg-cinnabar rounded-full"></span>
+          <h3 class="font-black text-[15px] tracking-[0.2em]">${cat}</h3>
+          <span class="text-[10px] text-inklight num-badge">${books.length} 册</span>
+          <div class="flex-1 h-px bg-line"></div>
+        </div>
+        <!-- 一层书架 -->
+        <div class="relative px-1">
+          <div class="flex items-end justify-start gap-3 flex-wrap min-h-[150px] pb-1">
+            ${books.map(b => {
+              const n = data.quotes.filter(q => q.bookId === b.id).length;
+              const h = 138 + (b.name.length % 3) * 8; // 高低错落
+              return `
+              <button onclick="filterBookId='${b.id}';switchTab('quotes')" class="active:scale-95 transition-transform" style="width:86px">
+                <div class="book-spine mx-auto flex justify-center relative" style="background:linear-gradient(160deg,${b.color},${b.color}d0);height:${h}px">
+                  <span class="v-text text-[#fff6ec] font-bold text-[13px] pt-3.5 pb-3.5" style="text-shadow:0 1px 2px rgba(0,0,0,0.3)">${b.name}</span>
+                  ${b.finished
+                    ? `<span class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gold border-2 border-paper flex items-center justify-center text-[8px] text-white font-black shadow">✓</span>`
+                    : `<span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] bg-ink/45 text-paper px-1.5 py-0.5 rounded-full font-bold tracking-widest">在读</span>`}
+                </div>
+                <div class="mt-2 text-center">
+                  <p class="text-[11px] font-bold truncate">${b.author}</p>
+                  <p class="text-[10px] text-cinnabar font-bold num-badge mt-0.5">${n} 摘${b.finished ? ' · 读完' : ''}</p>
+                </div>
+              </button>`;
+            }).join('')}
+          </div>
+          <div class="shelf-board"></div>
+          <div class="h-4"></div>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+    <button onclick="showToast('添加书目功能开发中')" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em]">＋ 新 增 书 目</button>
+  `;
+}
+
+// ---------- 格言页 ----------
+function renderMaxims() {
+  const allRelated = [];
+  data.quotes.forEach(q => (q.related || []).forEach(r => allRelated.push({ ...r, quote: q })));
+  const guwen = allRelated.filter(r => r.type === '古文');
+  const english = allRelated.filter(r => r.type === 'English');
+  const sec = (title, icon, arr, style) => `
+    <div class="mb-8 fade-in">
+      <div class="flex items-baseline gap-2.5 mb-4">
+        <span class="w-[3px] h-4 bg-cinnabar rounded-full"></span>
+        <h3 class="font-black text-[15px] tracking-[0.2em]">${icon} ${title}</h3>
+        <span class="text-[10px] text-inklight num-badge">${arr.length} 条</span>
+        <div class="flex-1 h-px bg-line"></div>
+      </div>
+      <div class="space-y-4">
+        ${arr.length === 0 ? '<p class="text-xs text-inklight opacity-60 py-4 text-center tracking-widest">暂 无 内 容</p>' : ''}
+        ${arr.map(r => `
+          <div class="letter-card rounded-2xl px-5 py-4 cursor-pointer fade-in" onclick="openDetail('${r.quote.id}')">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="ghost-seal">${r.type === 'English' ? '英谚' : '古文'}</span>
+              <span class="text-[10px] text-inklight">${r.source || ''}</span>
+            </div>
+            <p class="text-[15px] leading-[1.9] font-bold ${style === 'en' ? 'italic' : ''}">${style === 'en' ? `"${r.text}"` : `<span class="big-quote text-[40px] absolute opacity-0">.</span>${r.text}`}</p>
+            <div class="mt-3 pt-2.5 border-t border-dashed border-line flex items-center gap-2">
+              <span class="text-[10px] text-inklight shrink-0">出于</span>
+              <p class="text-[11px] text-inklight truncate">「${r.quote.original.slice(0, 20)}${r.quote.original.length > 20 ? '…' : ''}」</p>
+              <span class="ml-auto text-[10px] text-cinnabar/60 font-bold shrink-0">查看 →</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  return sec('类似古文', '📜', guwen, 'zh') + sec('英谚对照', '🌍', english, 'en');
+}
+
+// ---------- 我的页 ----------
+function renderMine() {
+  const finished = data.books.filter(b => b.finished);
+  const reading = data.books.filter(b => !b.finished);
+  const totalRelated = data.quotes.reduce((s, q) => s + (q.related || []).length, 0);
+  const sync = getSync();
+  const hasToken = sync && sync.token;
+  const hasCode = sync && sync.code;
+  const syncState = hasCode ? '已连接' : (hasToken ? '待绑定' : '未开启');
+  const syncCard = `
+    <div class="letter-card rounded-2xl p-6 mb-5 fade-in relative overflow-hidden">
+      <span class="corner-deco border-l-2 border-t-2" style="left:8px;top:8px"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:8px;bottom:8px"></span>
+      <div class="flex items-center gap-2.5 mb-4">
+        <span class="text-2xl">☁️</span>
+        <h3 class="font-black text-lg tracking-[0.15em]">云同步</h3>
+        <span class="ml-auto text-[10px] ${hasCode ? 'text-bamboo font-bold' : 'text-inklight'}">${syncState}</span>
+      </div>
+      ${!hasToken ? `
+      <!-- 第一步：输入 GitHub Token -->
+      <p class="text-xs text-inklight leading-relaxed mb-3">数据永久保存在你的 GitHub 私有仓库。先粘贴你的 GitHub Token（repo 权限），只需设置一次。</p>
+      <div class="flex gap-2.5 mb-2">
+        <input id="sync-token-input" placeholder="粘贴 GitHub Token（ghp_ 开头）" autocapitalize="off" spellcheck="false"
+          class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-paper border border-line text-xs font-bold placeholder:text-inklight/50 placeholder:font-normal" />
+        <button onclick="syncSaveToken()" class="px-5 py-3 rounded-xl bg-ink text-paper text-sm font-bold active:scale-95 transition-transform shrink-0">保存</button>
+      </div>
+      <p class="text-[9px] text-inklight/60 leading-relaxed">GitHub → Settings → Developer settings → Personal access tokens 生成，勾选 repo 权限。Token 只存在这台手机上，不会上传到别处。</p>
+      ` : !hasCode ? `
+      <!-- 第二步：生成 / 绑定同步码 -->
+      <p class="text-xs text-inklight leading-relaxed mb-4">生成同步码，在其他手机上输入同一码（并登录同一 Token），摘录数据即可跨设备同步、永久保存。</p>
+      <button onclick="syncCreate()" class="w-full py-3 rounded-xl bg-cinnabar text-[#fff6ec] text-sm font-bold tracking-[0.2em] active:scale-95 transition-transform mb-3">＋ 生成我的同步码</button>
+      <div class="flex gap-2.5">
+        <input id="sync-code-input" placeholder="输入已有同步码 YL-XXXX-XXXX" autocapitalize="characters"
+          class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-paper border border-line text-sm font-bold tracking-[0.08em] text-center placeholder:text-inklight/50 placeholder:text-xs placeholder:tracking-normal placeholder:font-normal" />
+        <button onclick="syncJoin()" class="px-5 py-3 rounded-xl bg-ink text-paper text-sm font-bold active:scale-95 transition-transform shrink-0">绑定</button>
+      </div>
+      <button onclick="syncClearToken()" class="w-full mt-3 text-[10px] text-inklight/70 underline underline-offset-2">清除已保存的 Token</button>
+      ` : `
+      <!-- 已绑定：展示同步码 + 操作 -->
+      <div class="text-center py-4 rounded-xl bg-gradient-to-b from-cinnabar/[0.06] to-transparent border border-cinnabar/15 mb-4">
+        <p class="text-[10px] text-inklight tracking-[0.3em] mb-2">我的同步码</p>
+        <button onclick="syncCopyCode()" class="num-badge font-black text-[22px] tracking-[0.12em] text-cinnabar active:scale-95 transition-transform">${sync.code}</button>
+        <p class="text-[10px] text-inklight mt-2">点击复制 · 在其他设备输入此码即可同步</p>
+      </div>
+      <div class="flex gap-2.5">
+        <button onclick="syncNow(true)" class="flex-1 py-3 rounded-xl bg-ink text-paper text-sm font-bold tracking-[0.2em] active:scale-95 transition-transform">⟳ 立即同步</button>
+        <button onclick="syncUnbind()" class="px-4 py-3 rounded-xl bg-paper border border-line text-sm font-bold text-inklight active:scale-95 transition-transform">断开</button>
+      </div>
+      <p class="text-[10px] text-inklight/70 mt-3 leading-relaxed">数据保存在 GitHub 私有仓库，永久可靠。改动会自动上传；打开 App 时自动拉取最新。多设备同时编辑时，以最后同步的为准。</p>
+      <button onclick="syncClearToken()" class="w-full mt-2 text-[10px] text-inklight/70 underline underline-offset-2">清除 Token 并解除绑定</button>
+      `}
+    </div>`;
+  return `
+    ${syncCard}
+    <div class="letter-card rounded-2xl p-6 mb-5 fade-in relative overflow-hidden">
+      <span class="corner-deco border-l-2 border-t-2" style="left:8px;top:8px"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:8px;bottom:8px"></span>
+      <div class="flex items-center gap-2.5 mb-5">
+        <span class="text-2xl">🕯️</span>
+        <h3 class="font-black text-lg tracking-[0.15em]">读书小结</h3>
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="py-4 rounded-xl bg-gradient-to-b from-cinnabar/[0.07] to-transparent border border-cinnabar/15">
+          <p class="text-[30px] font-black text-cinnabar num-badge leading-none">${data.quotes.length}</p>
+          <p class="text-[10px] text-inklight mt-2 tracking-[0.2em]">文摘</p>
+        </div>
+        <div class="py-4 rounded-xl bg-gradient-to-b from-indigoblue/[0.07] to-transparent border border-indigoblue/15">
+          <p class="text-[30px] font-black text-indigoblue num-badge leading-none">${finished.length}</p>
+          <p class="text-[10px] text-inklight mt-2 tracking-[0.2em]">读完</p>
+        </div>
+        <div class="py-4 rounded-xl bg-gradient-to-b from-bamboo/[0.07] to-transparent border border-bamboo/15">
+          <p class="text-[30px] font-black text-bamboo num-badge leading-none">${totalRelated}</p>
+          <p class="text-[10px] text-inklight mt-2 tracking-[0.2em]">佳句</p>
+        </div>
+      </div>
+    </div>
+    <div class="letter-card rounded-2xl p-6 fade-in">
+      <div class="flex items-baseline gap-2.5 mb-4">
+        <span class="w-[3px] h-4 bg-gold rounded-full"></span>
+        <h3 class="font-black text-[15px] tracking-[0.2em]">📖 已读书目</h3>
+        <span class="text-[10px] text-inklight num-badge">${finished.length} 册</span>
+        <div class="flex-1 h-px bg-line"></div>
+      </div>
+      <div class="space-y-2.5">
+        ${finished.map(b => `
+          <div class="flex items-center gap-3.5 p-3 rounded-xl bg-paper border border-line">
+            <div class="book-spine w-3 h-10 shrink-0" style="background:linear-gradient(180deg,${b.color},${b.color}cc)"></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold">${b.name} <span class="text-[10px] text-inklight font-normal">${b.author}</span></p>
+              <p class="text-[10px] text-inklight mt-0.5">${b.category} · ${b.finishDate}</p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-[15px] font-black num-badge" style="color:${b.color}">${data.quotes.filter(q => q.bookId === b.id).length}</p>
+              <p class="text-[9px] text-inklight">条摘录</p>
+            </div>
+          </div>`).join('')}
+      </div>
+      ${reading.length ? `
+      <div class="mt-5 pt-4 border-t border-dashed border-line">
+        <p class="text-[11px] font-bold text-inklight mb-2.5 tracking-[0.2em]">⏳ 在读</p>
+        <div class="flex gap-2.5 flex-wrap">
+          ${reading.map(b => `
+            <button onclick="filterBookId='${b.id}';switchTab('quotes')" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-paper border border-line active:scale-95 transition-transform">
+              <span class="w-2 h-2 rounded-full" style="background:${b.color}"></span>
+              <span class="text-xs font-bold">${b.name}</span>
+            </button>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+// ==================== 详情 ====================
+function openDetail(id) {
+  const q = data.quotes.find(x => x.id === id);
+  if (!q) return;
+  currentDetailId = id;
+  const book = data.books.find(b => b.id === q.bookId);
+  const c = book ? book.color : '#8e3b2c';
+  const block = (label, text) => text ? `
+    <div class="mb-5 relative pl-4">
+      <div class="absolute left-0 top-1.5 bottom-1 w-[2px] rounded" style="background:linear-gradient(180deg,${c},${c}33)"></div>
+      <p class="seal-tag mb-2" style="background:${c}">${label}</p>
+      <p class="text-sm leading-[2.1] text-ink">${text}</p>
+    </div>` : '';
+  document.getElementById('detail-body').innerHTML = `
+    <div class="flex items-center gap-2 mb-4">
+      <span class="seal-tag" style="background:${c}">${book ? book.name : '未分类'}</span>
+      <span class="text-[11px] text-inklight num-badge">${fmtDate(q.createdAt)} 摘录</span>
+    </div>
+    <div class="relative letter-card rounded-2xl p-6 my-2">
+      <span class="corner-deco border-l-2 border-t-2" style="left:7px;top:7px"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:7px;bottom:7px"></span>
+      <span class="big-quote absolute -top-2 left-4 text-[52px] select-none">「</span>
+      <p class="text-[17px] leading-[2.1] font-black pl-6 pt-2">${q.original}</p>
+      <p class="text-right text-xs text-inklight mt-3 pr-2">—— ${q.source}</p>
+    </div>
+    <div class="h-4"></div>
+    ${block('理解', q.understanding)}
+    ${block('举例', q.example)}
+    ${block('注意点', q.note)}
+    ${(q.related && q.related.length) ? `
+    <div class="mt-6 pt-5 border-t border-dashed border-line">
+      <div class="flex items-baseline gap-2.5 mb-4">
+        <span class="w-[3px] h-4 bg-cinnabar rounded-full"></span>
+        <p class="font-black text-[15px] tracking-[0.15em]">✦ 相似佳句</p>
+        <span class="text-[10px] text-inklight num-badge">${q.related.length} 条</span>
+      </div>
+      ${q.related.map(r => `
+        <div class="bg-paper rounded-xl p-4 mb-3 border border-line relative">
+          <div class="flex items-center justify-between mb-2">
+            <span class="ghost-seal">${r.type === 'English' ? '英谚' : '古文'}</span>
+            ${r.from === 'ai' ? '<span class="text-[9px] font-bold text-cinnabar/70">AI 搜罗</span>'
+              : r.from === 'lib' ? '<span class="text-[9px] font-bold text-inklight/60">精选搜罗</span>' : ''}
+          </div>
+          <p class="text-[14px] leading-[1.95] font-bold ${r.type === 'English' ? 'italic' : ''}">${r.type === 'English' ? `"${r.text}"` : r.text}</p>
+          <p class="text-right text-[11px] text-inklight mt-2">—— ${r.source || ''}</p>
+        </div>`).join('')}
+    </div>` : ''}
+    <div class="h-6"></div>
+  `;
+  document.getElementById('detail-modal').classList.remove('hidden');
+}
+function closeDetail() {
+  document.getElementById('detail-modal').classList.add('hidden');
+  currentDetailId = null;
+}
+document.getElementById('detail-del').onclick = function(e) {
+  e.stopPropagation();
+  if (!currentDetailId) return;
+  if (!confirm('确定删除这条文摘吗？')) return;
+  data.quotes = data.quotes.filter(q => q.id !== currentDetailId);
+  saveData();
+  closeDetail();
+  render();
+  showToast('已删除');
+};
+
+// ==================== 添加 ====================
+let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
+function openAddModal() {
+  const sel = document.getElementById('add-book');
+  sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
+  ['add-original','add-source','add-understanding','add-example','add-note','add-related'].forEach(id => document.getElementById(id).value = '');
+  // 重置「相似佳句 · 自动搜罗」区
+  pendingAutoSimilar = [];
+  document.getElementById('auto-similar').innerHTML = '';
+  document.getElementById('btn-similar-ic').textContent = '🔍';
+  document.getElementById('btn-similar-tx').textContent = '搜罗相似句';
+  document.getElementById('btn-similar').disabled = false;
+  document.getElementById('btn-similar').classList.remove('opacity-50','pointer-events-none');
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function saveQuote() {
+  const original = document.getElementById('add-original').value.trim();
+  if (!original) { showToast('请先抄录原文'); return; }
+  const manualRelated = document.getElementById('add-related').value.trim().split('\n').filter(Boolean).map(line => {
+    let type = '古文', rest = line;
+    const m = line.match(/^(古文|中文|English|英文|英谚|谚语)\s*[｜|:：]?\s*(.*)$/);
+    if (m) { type = (m[1] === '英文' || m[1] === '英谚' || m[1] === '谚语') ? 'English' : '古文'; rest = m[2] || line; }
+    if (/^[a-zA-Z]/.test(rest) && !m) type = 'English';
+    const srcMatch = rest.match(/^(.*?)[—－-]{1,2}\s*(《[^》]+》|.+)$/);
+    return { type, text: srcMatch ? srcMatch[1].trim() : rest, source: srcMatch ? srcMatch[2].trim() : '' };
+  });
+  // 合并勾选的自动搜罗相似句
+  const autoRelated = pendingAutoSimilar.filter((s, i) => {
+    const cb = document.getElementById('auto-chk-' + i);
+    return cb ? cb.checked : false;
+  }).map(s => ({ type: s.type, text: s.text, source: s.source, from: s.from }));
+  const related = [...autoRelated, ...manualRelated];
+  data.quotes.unshift({
+    id: 'q' + Date.now(),
+    bookId: document.getElementById('add-book').value,
+    original,
+    source: document.getElementById('add-source').value.trim() || '未注明出处',
+    understanding: document.getElementById('add-understanding').value.trim(),
+    example: document.getElementById('add-example').value.trim(),
+    note: document.getElementById('add-note').value.trim(),
+    related,
+    createdAt: Date.now(),
+  });
+  saveData();
+  closeAddModal();
+  render();
+  showToast('已收入书囊 ✦');
+}
+
+// ==================== 相似佳句 · 自动搜罗引擎 ====================
+// ---------------------------------------------------------------
+// 两种模式：
+//  1) AI 搜罗（推荐，需填 key）：把抄录句发给 AI，由它理解意思后搜罗 2-3 句相近佳句。
+//     在下方 SIMILAR_AI 填入 key 并置 enabled:true 即自动启用（无需改其他代码）。
+//  2) 内置精选库兜底（当前默认，无需 key、离线可用）：从下方 SIMILAR_LIB 按主题/关键词
+//     挑出意思相近的古文与英谚。搜不到网络或未配 AI 时自动回落到本模式。
+// ---------------------------------------------------------------
+const SIMILAR_AI = {
+  enabled: false,                       // 接入 AI 后改为 true
+  key: '',                              // 你的 API Key
+  baseUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  model: 'glm-4-flash',
+};
+
+// —— 内置相似句精选库：按主题组织（真句，出处已核对）——
+const SIMILAR_LIB = {
+  '勤学': {
+    g: [
+      { text: '学而不思则罔，思而不学则殆。', source: '《论语·为政》' },
+      { text: '玉不琢，不成器；人不学，不知道。', source: '《礼记·学记》' },
+      { text: '少壮不努力，老大徒伤悲。', source: '汉乐府《长歌行》' },
+      { text: '黑发不知勤学早，白首方悔读书迟。', source: '颜真卿《劝学》' },
+    ],
+    e: [
+      { text: 'Learning never exhausts the mind.', source: 'Leonardo da Vinci' },
+      { text: 'The more that you read, the more things you will know.', source: 'Dr. Seuss' },
+      { text: 'Knowledge is power.', source: 'Francis Bacon' },
+      { text: 'There is no royal road to learning.', source: 'English proverb' },
+    ],
+  },
+  '立志奋斗': {
+    g: [
+      { text: '志不立，天下无可成之事。', source: '王阳明《教条示龙场诸生》' },
+      { text: '天行健，君子以自强不息。', source: '《周易·乾卦》' },
+      { text: '路漫漫其修远兮，吾将上下而求索。', source: '屈原《离骚》' },
+      { text: '老骥伏枥，志在千里。', source: '曹操《龟虽寿》' },
+    ],
+    e: [
+      { text: 'Where there is a will, there is a way.', source: 'English proverb' },
+      { text: 'The best way to predict the future is to create it.', source: 'Peter Drucker' },
+      { text: 'Shoot for the moon. Even if you miss, you\u2019ll land among the stars.', source: 'Norman Vincent Peale' },
+      { text: 'Fall seven times, stand up eight.', source: 'Japanese proverb' },
+    ],
+  },
+  '诚信守诺': {
+    g: [
+      { text: '言必信，行必果。', source: '《论语·子路》' },
+      { text: '人而无信，不知其可也。', source: '《论语·为政》' },
+      { text: '诚者，天之道也；思诚者，人之道也。', source: '《孟子·离娄上》' },
+    ],
+    e: [
+      { text: 'Honesty is the best policy.', source: 'English proverb' },
+      { text: 'A promise made is a debt unpaid.', source: 'Robert W. Service' },
+      { text: 'Trust takes years to build and seconds to break.', source: 'English proverb' },
+    ],
+  },
+  '坚持恒心': {
+    g: [
+      { text: '锲而不舍，金石可镂。', source: '《荀子·劝学》' },
+      { text: '不积跬步，无以至千里；不积小流，无以成江海。', source: '《荀子·劝学》' },
+      { text: '绳锯木断，水滴石穿。', source: '宋·罗大经《鹤林玉露》' },
+    ],
+    e: [
+      { text: 'Rome was not built in a day.', source: 'English proverb' },
+      { text: 'Little strokes fell great oaks.', source: 'English proverb' },
+      { text: 'Perseverance is the hard work you do after you get tired of the work you already did.', source: 'Newt Gingrich' },
+    ],
+  },
+  '仁义爱人': {
+    g: [
+      { text: '仁者爱人，有礼者敬人。', source: '《孟子·离娄下》' },
+      { text: '己所不欲，勿施于人。', source: '《论语·颜渊》' },
+      { text: '老吾老，以及人之老；幼吾幼，以及人之幼。', source: '《孟子·梁惠王上》' },
+    ],
+    e: [
+      { text: 'Do unto others as you would have them do unto you.', source: 'The Golden Rule' },
+      { text: 'Kindness is a language the deaf can hear and the blind can see.', source: 'Mark Twain' },
+      { text: 'No act of kindness, no matter how small, is ever wasted.', source: 'Aesop' },
+    ],
+  },
+  '惜时光阴': {
+    g: [
+      { text: '逝者如斯夫，不舍昼夜。', source: '《论语·子罕》' },
+      { text: '盛年不重来，一日难再晨。', source: '陶渊明《杂诗》' },
+      { text: '一寸光阴一寸金，寸金难买寸光阴。', source: '《增广贤文》' },
+    ],
+    e: [
+      { text: 'Time and tide wait for no man.', source: 'English proverb' },
+      { text: 'Lost time is never found again.', source: 'Benjamin Franklin' },
+      { text: 'Yesterday is history, tomorrow is a mystery, but today is a gift.', source: 'Eleanor Roosevelt' },
+    ],
+  },
+  '修身自省': {
+    g: [
+      { text: '吾日三省吾身。', source: '《论语·学而》' },
+      { text: '见贤思齐焉，见不贤而内自省也。', source: '《论语·里仁》' },
+      { text: '知人者智，自知者明。', source: '《老子》' },
+    ],
+    e: [
+      { text: 'Know thyself.', source: 'Socrates' },
+      { text: 'The unexamined life is not worth living.', source: 'Socrates' },
+      { text: 'He who conquers himself is the mightiest warrior.', source: 'Confucius (oft. quoted)' },
+    ],
+  },
+  '交友择友': {
+    g: [
+      { text: '友直，友谅，友多闻，益矣。', source: '《论语·季氏》' },
+      { text: '近朱者赤，近墨者黑。', source: '晋·傅玄《太子少傅箴》' },
+      { text: '君子之交淡如水。', source: '《庄子·山木》' },
+    ],
+    e: [
+      { text: 'A friend in need is a friend indeed.', source: 'English proverb' },
+      { text: 'Tell me who your friends are, and I will tell you who you are.', source: 'English proverb' },
+      { text: 'The best mirror is an old friend.', source: 'George Herbert' },
+    ],
+  },
+  '生活奋斗': {
+    g: [
+      { text: '长风破浪会有时，直挂云帆济沧海。', source: '李白《行路难》' },
+      { text: '宝剑锋从磨砺出，梅花香自苦寒来。', source: '《警世贤文》' },
+      { text: '山重水复疑无路，柳暗花明又一村。', source: '陆游《游山西村》' },
+    ],
+    e: [
+      { text: 'Life is what you make it.', source: 'English proverb' },
+      { text: 'Every cloud has a silver lining.', source: 'English proverb' },
+      { text: 'The secret of getting ahead is getting started.', source: 'Mark Twain' },
+    ],
+  },
+  '回忆往事': {
+    g: [
+      { text: '当时只道是寻常。', source: '纳兰性德《浣溪沙》' },
+      { text: '无可奈何花落去，似曾相识燕归来。', source: '晏殊《浣溪沙》' },
+      { text: '此情可待成追忆，只是当时已惘然。', source: '李商隐《锦瑟》' },
+    ],
+    e: [
+      { text: 'Memories are the treasures of the mind.', source: 'English proverb' },
+      { text: 'What is gone is gone, but what remains is our memory of it.', source: 'Adapted proverb' },
+    ],
+  },
+};
+
+// 主题关键词映射（命中越早优先级越高）
+const THEME_KEYWORDS = [
+  ['勤学',   ['学而不思', '不学', '学习', '读书', '好学', '学问', '勤学', '苦读', '温习', '知识', '学而时习', '劝学', '不知道']],
+  ['立志奋斗', ['立志', '志不', '奋斗', '自强', '求索', '目标', '理想', '梦想', '争', '前程', '拼搏', '上进']],
+  ['诚信守诺', ['信', '诺', '诚', '诚实', '守信', '言必行', '君子一言', '答应']],
+  ['坚持恒心', ['坚持', '恒', '锲而不舍', '滴水', '铁杵', '磨', '不懈', '恒心', '日积月累', '聚沙', '持之以恒']],
+  ['仁义爱人', ['仁', '爱人', '善', '恕', '恻隐', '慈悲', '宽厚', '厚道', '善意', '关爱']],
+  ['惜时光阴', ['光阴', '岁月', '逝者', '时间', '时光', '时不我待', '白驹', '今日', '一刻', '盛年', '珍惜时间']],
+  ['修身自省', ['三省', '自省', '修身', '见贤思齐', '自知', '反省', '改过', '克己', '修养', '德行']],
+  ['交友择友', ['友', '朋友', '交友', '择友', '知己', '患难', '至交', '同道', '益友']],
+  ['生活奋斗', ['生活', '命运', '人生', '平凡', '世界', '活着', '遭遇', '苦难', '出路', '生活不能']],
+  ['回忆往事', ['回忆', '往事', '当年', '过去', '曾经', '回想', '记得', '思念', '旧事', '寻常', '追忆', '故人', '故土']],
+];
+
+// 关键词 → 排序计分：把原文匹配到的主题按命中个数排序
+function scoreTopics(text) {
+  const scores = {};
+  for (const [topic, kws] of THEME_KEYWORDS) {
+    let s = 0;
+    for (const kw of kws) { if (text.includes(kw)) s += kw.length; } // 更长关键词更可信
+    if (s > 0) scores[topic] = s;
+  }
+  return Object.entries(scores).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+}
+
+// 内置库挑选：从匹配的主题里取 2-3 句（尽量古文英谚混搭，最多保留库中数量）
+function pickFromLib(topics) {
+  const all = topics.length ? topics : ['勤学', '立志奋斗', '诚信守诺']; // 无匹配时给通用兜底主题
+  const picked = [];
+  const seen = new Set();
+  const want = 3;
+  const pushItem = (type, text, source) => {
+    if (picked.length >= want || seen.has(text)) return;
+    seen.add(text);
+    picked.push({ type, text, source, from: 'lib' });
+  };
+  for (const t of all) {
+    const group = SIMILAR_LIB[t]; if (!group) continue;
+    const gArr = group.g || []; const eArr = group.e || [];
+    const n = Math.max(gArr.length, eArr.length);
+    for (let i = 0; i < n && picked.length < want; i++) {
+      if (i < gArr.length) pushItem('古文', gArr[i].text, gArr[i].source);
+      if (picked.length < want && i < eArr.length) pushItem('English', eArr[i].text, eArr[i].source);
+    }
+  }
+  // 主主题凑不满时，从其他主题补足（保持双语均衡）
+  if (picked.length < want) {
+    const wantG = picked.filter(x => x.type === '古文').length;
+    const wantE = picked.filter(x => x.type === 'English').length;
+    for (const [k, group] of Object.entries(SIMILAR_LIB)) {
+      if (all.includes(k) || picked.length >= want) continue;
+      for (const x of (wantE <= wantG ? (group.g||[]) : (group.e||[]))) {
+        pushItem(wantE <= wantG ? '古文' : 'English', x.text, x.source);
+        if (picked.length >= want) break;
+      }
+    }
+  }
+  return picked.slice(0, want);
+}
+
+// AI 搜罗：理解句意后返回相近句（未配置 key 时返回 null，触发内置兜底）
+async function tryAiFindSimilar(text) {
+  if (!SIMILAR_AI.enabled || !SIMILAR_AI.key) return null;
+  const sys = '你是读书摘录助手。请理解用户抄录的句子意思，搜罗 2-3 句意思相近、能互相对照的中外佳句（古文/诗词与英文谚语皆可）。只输出 JSON 数组，形如 [{"type":"古文|English","text":"佳句","source":"出处"}],不要多余文字。';
+  const res = await fetch(SIMILAR_AI.baseUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SIMILAR_AI.key },
+    body: JSON.stringify({ model: SIMILAR_AI.model, messages: [
+      { role: 'system', content: sys },
+      { role: 'user', content: '抄录句子：' + text },
+    ], temperature: 0.7 }),
+  });
+  if (!res.ok) return null;
+  const j = await res.json();
+  const raw = j?.choices?.[0]?.message?.content || '';
+  const m = raw.match(/\[[\s\S]*\]/);
+  if (!m) return null;
+  const arr = JSON.parse(m[0]);
+  return (Array.isArray(arr) ? arr : []).slice(0, 3).map(x => ({ type: x.type === 'English' ? 'English' : '古文', text: (x.text || '').trim(), source: (x.source || '').trim(), from: 'ai' })).filter(x => x.text);
+}
+
+// 渲染搜罗结果（带勾选，默认全选）
+function renderAutoSimilar(list) {
+  const box = document.getElementById('auto-similar');
+  if (!list.length) { box.innerHTML = '<p class="text-[11px] text-inklight/70 py-2">未能搜到相近句，可稍后再试或手动补充。</p>'; return; }
+  const badge = list[0].from === 'ai' ? 'AI 搜罗' : (list[0].from === 'lib' ? '精选搜罗' : '');
+  box.innerHTML = (badge ? `<div class="text-[10px] text-cinnabar/80 font-bold mb-1 flex items-center gap-1"><span>🪄</span><span>${badge} · ${list.length} 句</span></div>` : '')
+    + list.map((s, i) => `
+      <label class="flex items-start gap-2.5 p-3 rounded-xl border bg-paper border-line cursor-pointer active:bg-paper/80 transition-colors">
+        <input type="checkbox" id="auto-chk-${i}" checked class="mt-1 w-4 h-4 accent-[#a63a2b] shrink-0">
+        <span class="flex-1 min-w-0">
+          <span class="flex items-center gap-1.5 mb-1">
+            <span class="ghost-seal">${s.type === 'English' ? '英谚' : '古文'}</span>
+            ${s.source ? `<span class="text-[9px] text-inklight truncate">—— ${s.source}</span>` : ''}
+          </span>
+          <span class="text-[13px] leading-[1.8] font-bold ${s.type === 'English' ? 'italic' : ''}">${s.type === 'English' ? `"${s.text}"` : s.text}</span>
+        </span>
+      </label>`).join('');
+}
+
+// 主入口：点「搜罗相似句」
+async function autoFindSimilar() {
+  const original = document.getElementById('add-original').value.trim();
+  if (!original) { showToast('先抄录原文，再搜相似句'); return; }
+  const btn = document.getElementById('btn-similar');
+  const ic = document.getElementById('btn-similar-ic');
+  const tx = document.getElementById('btn-similar-tx');
+  btn.disabled = true; btn.classList.add('opacity-60','pointer-events-none');
+  ic.textContent = '⏳'; tx.textContent = '搜罗中…';
+  document.getElementById('auto-similar').innerHTML = '<p class="text-[11px] text-inklight/70 py-2 fade-in">正在理解句意并搜罗相近佳句…</p>';
+  try {
+    // 优先 AI；未配置 AI 或失败时自动回落内置库
+    let list = await tryAiFindSimilar(original);
+    if (!list) { list = pickFromLib(scoreTopics(original)); await new Promise(r => setTimeout(r, 400)); }
+    pendingAutoSimilar = list;
+    renderAutoSimilar(list);
+  } catch (e) {
+    const list = pickFromLib(scoreTopics(original));
+    pendingAutoSimilar = list;
+    renderAutoSimilar(list);
+  } finally {
+    ic.textContent = '🔍'; tx.textContent = '重新搜罗';
+    btn.disabled = false; btn.classList.remove('opacity-60','pointer-events-none');
+  }
+}
+
+// ==================== 云同步（GitHub 私有仓库模式，数据永久保存） ====================
+const SYNC_KEY = 'yulu-sync2';
+const GH = {
+  api: 'https://api.github.com',
+  owner: 'crystal236102087',
+  repo: 'yulu-sync',
+  path: (code) => 'data/' + code + '.json'
+};
+let syncDirty = false;     // 本地有未推送的修改
+let syncTimer = null;      // 推送防抖计时器
+let syncBusy = false;      // 防并发
+
+function getSync() { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || null; } catch (e) { return null; } }
+function setSync(s) { try { s ? localStorage.setItem(SYNC_KEY, JSON.stringify(s)) : localStorage.removeItem(SYNC_KEY); } catch (e) {} }
+
+/* base64 UTF-8 安全编解码（分块防栈溢出） */
+function b64enc(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+function b64dec(b64) {
+  const bin = atob(String(b64).replace(/\n/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+}
+
+async function ghFetch(method, path, body, token) {
+  return fetch(GH.api + path, {
+    method,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+/* 从私有仓库读数据文件；不存在返回 null */
+async function ghGetFile(code, token) {
+  const res = await ghFetch('GET', '/repos/' + GH.owner + '/' + GH.repo + '/contents/' + GH.path(code), null, token);
+  if (res.status === 404) return null;
+  if (res.status === 401) throw new Error('Token 无效或已过期');
+  if (!res.ok) throw new Error('GitHub HTTP ' + res.status);
+  const j = await res.json();
+  return { sha: j.sha, data: JSON.parse(b64dec(j.content)) };
+}
+
+/* 写数据文件（存在时需带 sha）；返回新 sha */
+async function ghPutFile(code, token, obj, sha) {
+  const body = { message: 'yulu sync ' + new Date().toISOString(), content: b64enc(JSON.stringify(obj)) };
+  if (sha) body.sha = sha;
+  const res = await ghFetch('PUT', '/repos/' + GH.owner + '/' + GH.repo + '/contents/' + GH.path(code), body, token);
+  if (res.status === 401) throw new Error('Token 无效或已过期');
+  if (res.status === 409 || res.status === 422) throw new Error('CONFLICT');
+  if (!res.ok) throw new Error('GitHub HTTP ' + res.status);
+  const j = await res.json();
+  return j.content ? j.content.sha : sha;
+}
+
+/* 保存 GitHub Token（先验证有效性） */
+async function syncSaveToken() {
+  const input = document.getElementById('sync-token-input');
+  if (!input) return;
+  const token = (input.value || '').trim();
+  if (token.length < 20) { showToast('Token 格式看起来不对'); return; }
+  if (syncBusy) return; syncBusy = true;
+  try {
+    const res = await fetch(GH.api + '/user', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) throw new Error(res.status === 401 ? 'Token 无效或已过期' : '验证失败 HTTP ' + res.status);
+    const s = getSync() || {};
+    setSync(Object.assign(s, { token }));
+    showToast('Token 已保存 ✓');
+    render();
+  } catch (e) { showToast('保存失败：' + e.message); }
+  finally { syncBusy = false; }
+}
+
+/* 清除 Token */
+function syncClearToken() {
+  const s = getSync();
+  setSync(s ? { token: null } : null);
+  showToast('Token 已清除（本地数据保留）');
+  render();
+}
+
+/* 生成新同步码（在私有仓库创建数据文件） */
+async function syncCreate() {
+  const s = getSync();
+  if (!s || !s.token) { showToast('请先保存 GitHub Token'); return; }
+  if (syncBusy) return; syncBusy = true;
+  try {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    let code = 'YL-' + seg() + '-' + seg();
+    while (await ghGetFile(code, s.token)) { code = 'YL-' + seg() + '-' + seg(); } // 确保码未占用
+    const updatedAt = Date.now();
+    const sha = await ghPutFile(code, s.token, { updatedAt, payload: data });
+    setSync({ token: s.token, code, sha, lastSyncAt: updatedAt });
+    syncDirty = false;
+    showToast('同步码已生成并上传 ✓');
+    render();
+  } catch (e) { showToast('生成失败：' + e.message); }
+  finally { syncBusy = false; }
+}
+
+/* 输入同步码绑定（新设备） */
+async function syncJoin() {
+  const input = document.getElementById('sync-code-input');
+  if (!input) return;
+  const s = getSync();
+  if (!s || !s.token) { showToast('请先保存 GitHub Token'); return; }
+  const code = (input.value || '').trim().toUpperCase();
+  if (!/^YL-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { showToast('同步码格式：YL-XXXX-XXXX'); return; }
+  if (syncBusy) return; syncBusy = true;
+  try {
+    const file = await ghGetFile(code, s.token);
+    if (file) {
+      if (file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
+        data = file.data.payload;
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
+      }
+      setSync({ token: s.token, code, sha: file.sha, lastSyncAt: file.data.updatedAt || 0 });
+      syncDirty = false;
+      showToast('绑定成功，已同步 ✓');
+      render();
+    } else {
+      const updatedAt = Date.now();
+      const sha = await ghPutFile(code, s.token, { updatedAt, payload: data });
+      setSync({ token: s.token, code, sha, lastSyncAt: updatedAt });
+      syncDirty = false;
+      showToast('已用该码上传本地数据 ✓');
+      render();
+    }
+  } catch (e) { showToast('绑定失败：' + e.message); }
+  finally { syncBusy = false; }
+}
+
+/* 推送本地数据到 GitHub */
+async function syncPush() {
+  const s = getSync(); if (!s || !s.token || !s.code) return;
+  const updatedAt = Date.now();
+  let sha;
+  try {
+    sha = await ghPutFile(s.code, s.token, { updatedAt, payload: data }, s.sha);
+  } catch (e) {
+    if (e.message === 'CONFLICT') {
+      // 远端被其他设备改过：拉最新比较时间戳
+      const file = await ghGetFile(s.code, s.token);
+      if (file && (file.data.updatedAt || 0) > updatedAt && file.data.payload) {
+        data = file.data.payload;
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (er) {}
+        setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: file.data.updatedAt });
+        syncDirty = false; render();
+        return;
+      }
+      sha = await ghPutFile(s.code, s.token, { updatedAt, payload: data }, file ? file.sha : undefined);
+    } else { throw e; }
+  }
+  setSync({ token: s.token, code: s.code, sha, lastSyncAt: updatedAt });
+}
+
+/* 立即同步（手动 / 启动 / 切前台） */
+async function syncNow(manual) {
+  const s = getSync(); if (!s || !s.token || !s.code || syncBusy) return;
+  syncBusy = true;
+  try {
+    const file = await ghGetFile(s.code, s.token);
+    const remoteAt = file ? (file.data.updatedAt || 0) : 0;
+    if (file && remoteAt > s.lastSyncAt && file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
+      data = file.data.payload;
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
+      setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: remoteAt });
+      syncDirty = false;
+      render();
+    } else if (syncDirty || s.lastSyncAt === 0) {
+      await syncPush();
+      syncDirty = false;
+    }
+    if (manual) showToast('同步完成 ✓');
+  } catch (e) { if (manual) showToast('同步失败：' + e.message); }
+  finally { syncBusy = false; if (currentTab === 'mine') render(); }
+}
+
+/* 数据保存后自动推送（防抖 3 秒） */
+function scheduleSyncPush() {
+  const s = getSync(); if (!s || !s.token || !s.code) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncPush().then(() => { syncDirty = false; }).catch(() => {}); }, 3000);
+}
+
+/* 复制同步码 */
+function syncCopyCode() {
+  const s = getSync(); if (!s || !s.code) return;
+  const text = s.code;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('同步码已复制 ✓')).catch(() => showToast(text));
+  } else { showToast(text); }
+}
+
+/* 断开同步（保留 Token，清除绑定） */
+function syncUnbind() {
+  if (!confirm('断开后这台手机将不再同步。本地数据保留，其他设备不受影响。确定断开？')) return;
+  const s = getSync();
+  setSync(s ? { token: s.token } : null);
+  syncDirty = false;
+  showToast('已断开云同步');
+  render();
+}
+
+/* 切回前台时自动拉一次 */
+document.addEventListener('visibilitychange', () => {
+  const s = getSync();
+  if (document.visibilityState === 'visible' && s && s.token && s.code) syncNow(false);
+});
+
+// ==================== 每日佳句（今日卡片） ====================
+let dailyData = null;
+let dailyIndex = 0;
+
+function wEmoji(t) {
+  return ({ '晴': '☀️', '多云': '⛅', '阴': '☁️', '雾': '🌫️', '毛毛雨': '🌦️', '雨': '🌧️', '雪': '❄️', '雷雨': '⛈️' })[t] || '🌤️';
+}
+
+/* ---- 前端兜底计算（GitHub Pages 无后端时使用） ---- */
+const TERMS_FE = [
+  { n: '小寒', m: 1, c: 5.4055 }, { n: '大寒', m: 1, c: 20.12 },
+  { n: '立春', m: 2, c: 3.87 }, { n: '雨水', m: 2, c: 18.73 },
+  { n: '惊蛰', m: 3, c: 5.63 }, { n: '春分', m: 3, c: 20.646 },
+  { n: '清明', m: 4, c: 4.81 }, { n: '谷雨', m: 4, c: 20.1 },
+  { n: '立夏', m: 5, c: 5.52 }, { n: '小满', m: 5, c: 21.04 },
+  { n: '芒种', m: 6, c: 5.678 }, { n: '夏至', m: 6, c: 21.37 },
+  { n: '小暑', m: 7, c: 7.108 }, { n: '大暑', m: 7, c: 22.83 },
+  { n: '立秋', m: 8, c: 7.5 }, { n: '处暑', m: 8, c: 23.13 },
+  { n: '白露', m: 9, c: 7.646 }, { n: '秋分', m: 9, c: 23.042 },
+  { n: '寒露', m: 10, c: 8.318 }, { n: '霜降', m: 10, c: 23.438 },
+  { n: '立冬', m: 11, c: 7.438 }, { n: '小雪', m: 11, c: 22.36 },
+  { n: '大雪', m: 12, c: 7.18 }, { n: '冬至', m: 12, c: 21.94 },
+];
+const TERM_QUOTES_FE = {
+  '小寒': [['江雨蒙蒙作小寒，雪飘五出尚未干', '黄庭坚'], ['寒夜客来茶当酒，竹炉汤沸火初红', '杜耒']],
+  '大寒': [['墙角数枝梅，凌寒独自开', '王安石'], ['旧雪未及消，新雪又拥户', '邵雍']],
+  '立春': [['春风如贵客，一到便繁华', '袁枚'], ['律回岁晚冰霜少，春到人间草木知', '张栻']],
+  '雨水': [['好雨知时节，当春乃发生', '杜甫'], ['天街小雨润如酥，草色遥看近却无', '韩愈']],
+  '惊蛰': [['微雨众卉新，一雷惊蛰始', '韦应物'], ['仲春遘时雨，始雷发东隅', '陶渊明']],
+  '春分': [['春分雨脚落声微，柳岸斜风带客归', '徐铉'], ['等闲识得东风面，万紫千红总是春', '朱熹']],
+  '清明': [['清明时节雨纷纷，路上行人欲断魂', '杜牧'], ['况是清明好天气，不妨游衍莫忘归', '程颢']],
+  '谷雨': [['谷雨春光晓，山川黛色青', '元稹'], ['正好清明连谷雨，一杯香茗坐其间', '郑板桥']],
+  '立夏': [['绿遍山原白满川，子规声里雨如烟', '翁卷'], ['小荷才露尖尖角，早有蜻蜓立上头', '杨万里']],
+  '小满': [['夜莺啼绿柳，皓月醒长空', '欧阳修'], ['最爱垄头麦，迎风笑落红', '佚名']],
+  '芒种': [['时雨及芒种，四野皆插秧', '陆游'], ['芒种看今日，螳螂应节生', '元稹']],
+  '夏至': [['昼晷已云极，宵漏自此长', '韦应物'], ['绿筠尚含粉，圆荷始散芳', '韦应物']],
+  '小暑': [['倏忽温风至，因循小暑来', '元稹'], ['荷风送香气，竹露滴清响', '孟浩然']],
+  '大暑': [['桂轮开子夜，萤火照空时', '元稹'], ['何以销烦暑，端居一院中', '白居易']],
+  '立秋': [['睡起秋声无觅处，满阶梧叶月明中', '刘翰'], ['云天收夏色，木叶动秋声', '刘言史']],
+  '处暑': [['处暑无三日，新凉直万金', '苏泂'], ['疾风驱急雨，残暑扫除空', '仇远']],
+  '白露': [['露从今夜白，月是故乡明', '杜甫'], ['蒹葭苍苍，白露为霜', '《诗经》']],
+  '秋分': [['金气秋分，风清露冷秋期半', '谢逸'], ['自古逢秋悲寂寥，我言秋日胜春朝', '刘禹锡']],
+  '寒露': [['袅袅凉风动，凄凄寒露零', '白居易'], ['新开寒露丛，远比水间红', '韩愈']],
+  '霜降': [['停车坐爱枫林晚，霜叶红于二月花', '杜牧'], ['霜降水反壑，风落木归山', '黄庭坚']],
+  '立冬': [['细雨生寒未有霜，庭前木叶半青黄', '仇远'], ['绿蚁新醅酒，红泥小火炉', '白居易']],
+  '小雪': [['晚来天欲雪，能饮一杯无', '白居易'], ['花雪随风不厌看，更多还肯失微寒', '戴叔伦']],
+  '大雪': [['夜深知雪重，时闻折竹声', '白居易'], ['孤舟蓑笠翁，独钓寒江雪', '柳宗元']],
+  '冬至': [['天时人事日相催，冬至阳生春又来', '杜甫'], ['想得家中夜深坐，还应说着远行人', '白居易']],
+};
+const WEATHER_QUOTES_FE = {
+  sunny: [['水光潋滟晴方好，山色空蒙雨亦奇', '苏轼'], ['晴空一鹤排云上，便引诗情到碧霄', '刘禹锡'], ['日长睡起无情思，闲看儿童捉柳花', '杨万里']],
+  cloudy: [['东边日出西边雨，道是无晴却有晴', '刘禹锡'], ['山雨欲来风满楼', '许浑'], ['黑云压城城欲摧', '李贺']],
+  rain: [['小楼一夜听春雨，深巷明朝卖杏花', '陆游'], ['沾衣欲湿杏花雨，吹面不寒杨柳风', '志南'], ['少年听雨歌楼上，红烛昏罗帐', '蒋捷']],
+  snow: [['夜深知雪重，时闻折竹声', '白居易'], ['晚来天欲雪，能饮一杯无', '白居易'], ['忽如一夜春风来，千树万树梨花开', '岑参']],
+  fog: [['雾失楼台，月迷津渡', '秦观'], ['烟笼寒水月笼沙', '杜牧']],
+  storm: [['黑云翻墨未遮山，白雨跳珠乱入船', '苏轼'], ['溪云初起日沉阁，山雨欲来风满楼', '许浑']],
+};
+const CLASSIC_QUOTES_FE = [
+  ['学而时习之，不亦说乎', '《论语·学而》', '论语'], ['温故而知新，可以为师矣', '《论语·为政》', '论语'],
+  ['三人行，必有我师焉', '《论语·述而》', '论语'], ['己所不欲，勿施于人', '《论语·颜渊》', '论语'],
+  ['知之为知之，不知为不知，是知也', '《论语·为政》', '论语'], ['见贤思齐焉，见不贤而内自省也', '《论语·里仁》', '论语'],
+  ['岁寒，然后知松柏之后凋也', '《论语·子罕》', '论语'], ['逝者如斯夫，不舍昼夜', '《论语·子罕》', '论语'],
+  ['君子和而不同，小人同而不和', '《论语·子路》', '论语'], ['知之者不如好之者，好之者不如乐之者', '《论语·雍也》', '论语'],
+  ['不患人之不己知，患不知人也', '《论语·学而》', '论语'], ['工欲善其事，必先利其器', '《论语·卫灵公》', '论语'],
+  ['穷则独善其身，达则兼善天下', '《孟子·尽心上》', '孟子'], ['老吾老，以及人之老；幼吾幼，以及人之幼', '《孟子·梁惠王上》', '孟子'],
+  ['生于忧患而死于安乐', '《孟子·告子下》', '孟子'], ['富贵不能淫，贫贱不能移，威武不能屈', '《孟子·滕文公下》', '孟子'],
+  ['得道者多助，失道者寡助', '《孟子·公孙丑下》', '孟子'], ['尽信《书》，则不如无《书》', '《孟子·尽心下》', '孟子'],
+  ['虽有智慧，不如乘势；虽有镃基，不如待时', '《孟子·公孙丑上》', '孟子'], ['心之官则思，思则得之，不思则不得也', '《孟子·告子上》', '孟子'],
+  ['源泉混混，不舍昼夜，盈科而后进', '《孟子·离娄下》', '孟子'],
+  ['上善若水，水善利万物而不争', '《道德经·第八章》', '道德经'], ['千里之行，始于足下', '《道德经·第六十四章》', '道德经'],
+  ['知人者智，自知者明', '《道德经·第三十三章》', '道德经'], ['祸兮福之所倚，福兮祸之所伏', '《道德经·第五十八章》', '道德经'],
+  ['天下难事，必作于易；天下大事，必作于细', '《道德经·第六十三章》', '道德经'],
+  ['合抱之木，生于毫末；九层之台，起于累土', '《道德经·第六十四章》', '道德经'],
+  ['胜人者有力，自胜者强', '《道德经·第三十三章》', '道德经'], ['曲则全，枉则直', '《道德经·第二十二章》', '道德经'],
+  ['大方无隅，大器晚成', '《道德经·第四十一章》', '道德经'], ['知足者富，强行者有志', '《道德经·第三十三章》', '道德经'],
+  ['多言数穷，不如守中', '《道德经·第五章》', '道德经'],
+  ['天行健，君子以自强不息', '《周易·乾卦》', '周易'], ['路漫漫其修远兮，吾将上下而求索', '屈原《离骚》', '楚辞'],
+  ['不积跬步，无以至千里；不积小流，无以成江海', '《荀子·劝学》', '荀子'],
+  ['博学之，审问之，慎思之，明辨之，笃行之', '《中庸》', '中庸'], ['大学之道，在明明德，在亲民，在止于至善', '《大学》', '大学'],
+  ['靡不有初，鲜克有终', '《诗经·大雅》', '诗经'], ['吾生也有涯，而知也无涯', '《庄子·养生主》', '庄子'],
+];
+const GEN_QUOTES_FE = [
+  ['纸上得来终觉浅，绝知此事要躬行', '陆游'], ['旧书不厌百回读，熟读深思子自知', '苏轼'],
+  ['问渠那得清如许，为有源头活水来', '朱熹'], ['腹有诗书气自华', '苏轼'],
+  ['三更灯火五更鸡，正是男儿读书时', '颜真卿'], ['读书破万卷，下笔如有神', '杜甫'],
+];
+
+function feTermDay(y2, c) { return Math.floor(y2 * 0.2422 + c) - Math.floor(y2 / 4); }
+function feCurrentTerm(date) {
+  const y = date.getFullYear(), y2 = y % 100;
+  let prev = { n: '冬至', m: date.getMonth() + 1 === 12 ? 12 : 12, d: feTermDay((y - 1) % 100, 21.94) };
+  for (const t of TERMS_FE) {
+    const tDate = new Date(y, t.m - 1, feTermDay(y2, t.c));
+    if (tDate <= date) prev = { n: t.n, m: t.m, d: feTermDay(y2, t.c) };
+  }
+  return { name: prev.n, isTermDay: (prev.m === date.getMonth() + 1 && prev.d === date.getDate()) };
+}
+function feWeatherInfo(code) {
+  if (code === 0) return { text: '晴', g: 'sunny' };
+  if ([1, 2].includes(code)) return { text: '多云', g: 'cloudy' };
+  if (code === 3) return { text: '阴', g: 'cloudy' };
+  if ([45, 48].includes(code)) return { text: '雾', g: 'fog' };
+  if ([51, 53, 55, 56, 57].includes(code)) return { text: '毛毛雨', g: 'rain' };
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { text: '雨', g: 'rain' };
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return { text: '雪', g: 'snow' };
+  if ([95, 96, 99].includes(code)) return { text: '雷雨', g: 'storm' };
+  return { text: '多云', g: 'cloudy' };
+}
+
+/* 前端本地计算每日佳句（节气 + 天气 + 经典句库） */
+async function localDaily(dateStr, lat, lon) {
+  const date = new Date(dateStr + 'T12:00:00+08:00');
+  const term = feCurrentTerm(date);
+  const seed = parseInt(dateStr.replace(/-/g, ''), 10);
+  const weekday = '星期' + ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+  let weather = null;
+  if (lat != null && lon != null) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 3500);
+      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto', { signal: ctrl.signal });
+      clearTimeout(timer);
+      const w = await r.json();
+      if (w && w.current_weather) {
+        const info = feWeatherInfo(w.current_weather.weathercode);
+        weather = { text: info.text, g: info.g, temp: Math.round(w.current_weather.temperature) };
+      }
+    } catch (e) {}
+  }
+  const quotes = [];
+  const tq = TERM_QUOTES_FE[term.name] || [];
+  const hash = (str) => { let h = 0; for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+  const seedSort = (a, b) => ((hash(a[0]) ^ seed * 2654435761) % 997) - ((hash(b[0]) ^ seed * 2654435761) % 997);
+  if (term.isTermDay) tq.forEach((q) => quotes.push({ text: q[0], source: q[1], tag: '今日' + term.name }));
+  CLASSIC_QUOTES_FE.slice().sort(seedSort).slice(0, 4).forEach((q) => quotes.push({ text: q[0], source: q[1], tag: q[2] }));
+  if (!term.isTermDay && tq.length) tq.forEach((q) => quotes.push({ text: q[0], source: q[1], tag: term.name }));
+  if (weather && WEATHER_QUOTES_FE[weather.g]) WEATHER_QUOTES_FE[weather.g].forEach((q) => quotes.push({ text: q[0], source: q[1], tag: weather.text }));
+  GEN_QUOTES_FE.slice().sort(seedSort).slice(0, 2).forEach((q) => quotes.push({ text: q[0], source: q[1], tag: '读书' }));
+  return { ok: true, date: dateStr, weekday, term: { name: term.name, isTermDay: term.isTermDay }, weather, hot: null, quotes };
+}
+
+async function loadDaily() {
+  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  /* 同一天先用本地缓存（秒开） */
+  try {
+    const cached = JSON.parse(localStorage.getItem('yulu-daily2') || 'null');
+    if (cached && cached.date === today && cached.data && cached.data.ok) {
+      dailyData = cached.data; renderDaily(); return;
+    }
+  } catch (e) {}
+  /* IP 定位（尽力而为，2.5 秒超时） */
+  let lat = null, lon = null;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 2500);
+    const r = await fetch('https://ipapi.co/json/', { signal: ctrl.signal });
+    clearTimeout(timer);
+    const j = await r.json();
+    if (j && typeof j.latitude === 'number' && typeof j.longitude === 'number') { lat = j.latitude; lon = j.longitude; }
+  } catch (e) {}
+  /* 优先服务端（含热搜）；3 秒超时后转前端本地计算 */
+  let j = null;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    const r = await fetch('/api/daily?lat=' + lat + '&lon=' + lon, { signal: ctrl.signal });
+    clearTimeout(timer);
+    j = await r.json().catch(() => null);
+    if (!j || !j.ok) j = null;
+  } catch (e) {}
+  if (!j) j = await localDaily(today, lat, lon);
+  if (j && j.ok) {
+    dailyData = j; dailyIndex = 0;
+    try { localStorage.setItem('yulu-daily2', JSON.stringify({ date: today, data: j })); } catch (e) {}
+  }
+  renderDaily();
+}
+
+function renderDaily() {
+  const el = document.getElementById('daily-card');
+  if (!el) return;
+  if (!dailyData || !dailyData.ok || !(dailyData.quotes || []).length) { el.innerHTML = ''; return; }
+  const d = dailyData;
+  const qs = d.quotes;
+  const q = qs[dailyIndex % qs.length];
+  const parts = d.date.split('-');
+  const mm = parseInt(parts[1], 10), dd = parseInt(parts[2], 10);
+  const termBadge = d.term && d.term.name
+    ? `<span class="seal-tag" style="background:#c0392b">${d.term.isTermDay ? '今日' + d.term.name : d.term.name}</span>` : '';
+  const w = d.weather
+    ? `<span class="text-[11px] text-inklight tracking-wider">${wEmoji(d.weather.text)} ${d.weather.text} ${d.weather.temp}°</span>` : '';
+  const hot = (d.hot && d.hot.length)
+    ? `<p class="text-[9px] text-inklight/60 mt-3 pt-2.5 border-t border-dashed border-line tracking-wider truncate">今日热点 · ${d.hot.join(' · ')}</p>` : '';
+  el.innerHTML = `
+    <div class="letter-card rounded-2xl p-6 mb-5 fade-in relative overflow-hidden">
+      <span class="corner-deco border-l-2 border-t-2" style="left:8px;top:8px"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:8px;bottom:8px"></span>
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[13px] font-black tracking-[0.1em] num-badge">${mm}月${dd}日</span>
+          <span class="text-[11px] text-inklight">${d.weekday}</span>
+          ${termBadge}
+        </div>
+        ${w}
+      </div>
+      <p class="brush-title text-[25px] leading-snug text-center py-3 px-2"
+         style="color:#2a2622;text-shadow:0 1px 3px rgba(42,38,34,0.08)">「 ${q.text} 」</p>
+      <div class="flex items-center justify-between mt-1">
+        <p class="text-[11px] text-inklight pl-1">—— ${q.source}${q.tag ? ' <span class="opacity-60">· ' + q.tag + '</span>' : ''}</p>
+        <button onclick="dailyNext()" class="text-[11px] text-cinnabar font-bold active:scale-95 transition-transform shrink-0">换一句 ↻</button>
+      </div>
+      ${hot}
+    </div>`;
+}
+
+function dailyNext() { dailyIndex++; renderDaily(); }
+
+// ==================== 启动 ====================
+loadData();
+switchTab('quotes');
+if (getSync()) syncNow(false);
+loadDaily();
+
+// ==================== PWA：注册 Service Worker ====================
+/* 若链接带 query（如 ?sharecode=），把它并入 manifest start_url，
+   保证安装到主屏后打开的地址与授权链接一致 */
+(function fixManifestStartUrl() {
+  if (!location.search) return;
+  const link = document.querySelector('link[rel="manifest"]');
+  if (!link) return;
+  fetch(link.href).then(r => r.json()).then(m => {
+    const base = new URL(m.start_url || './index.html', location.href);
+    const target = base.pathname + location.search;
+    m.start_url = target;
+    const blob = new Blob([JSON.stringify(m)], { type: 'application/manifest+json' });
+    link.href = URL.createObjectURL(blob);
+  }).catch(() => {});
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
