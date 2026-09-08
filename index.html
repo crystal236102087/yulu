@@ -463,7 +463,7 @@ const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a
 /* 分类卡片底图：水墨国风插画（art/ 下 4 张，按渠道对应意境）*/
 function channelArt(id) {
   // ?v=N 版本参数：换图时把对应图 +1，绕过 GitHub Pages CDN 旧缓存，确保用户拿到新图
-  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=8' };
+  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=9' };
   return art[id] || '';
 }
 
@@ -541,7 +541,6 @@ function renderGallery() {
           <p class="text-white font-black text-[19px] tracking-[0.12em] flex items-center gap-1.5" style="text-shadow:0 2px 7px rgba(0,0,0,0.5)">${c.icon} ${c.id}</p>
           <p class="text-white/90 text-[10.5px] mt-1 tracking-widest" style="text-shadow:0 1px 4px rgba(0,0,0,0.5)">${c.sub} · ${n} 条</p>
         </div>
-        <span class="absolute right-2.5 bottom-2.5 w-6 h-6 rounded-full bg-cinnabar/90 text-white text-[11px] font-black flex items-center justify-center shadow" style="border:1px solid rgba(255,246,236,0.5)">${c.id[0]}</span>
       </button>`;
   }).join('');
   return `
