@@ -30,19 +30,19 @@
 
 ## 技术架构
 
-- **index.html**（约 1550 行，单文件应用）
+- **index.html**（约 1800 行，单文件应用）
   - Tailwind CDN + 原生 JS，无构建
   - 字体：Ma Shan Zheng（品牌「余录」+ 印章「余」）、Noto Serif SC（正文）、Long Cang / Zhi Mang Xing
-  - 品牌区：左 31px 红印章 + 右「余录」毛笔字 + 下方「读书摘录」横排
-  - 书架：仿真实书籍封面（book-cover，书名作者居中+顶部柔光+木质层板），分类标题左置、右侧 N books
-  - 默认书目含经济学经典：置身事内/经济学原理/穷查理宝典/国富论
-  - 四个 Tab：文摘（含今日佳句卡片）/ 书架 / 格言 / 我的
-  - **渠道分类**：摘录分 书本📖/影视🎬/评论💬/经济📈 四渠道，独立筛选；新增摘录时可选渠道，非书本渠道无需选书
+  - 品牌区：左 42px 红印章 + 右「余录」毛笔字 + 下方「读书摘录」横排
+  - 四个 Tab：文摘（含今日佳句 + 分类首页）/ 书架 / 书房 / 我的
+  - **渠道分类**：`CHANNELS` 四渠道——书本📖/影视🎬/评论💬/经济📈，quotes 用 `channel` 字段 + `bookId` 区分；quote 自带 `channel: '书本'` 兜底（normalizeData）
+  - **分类首页**：`homeView`='gallery' 时 renderGallery 显示「今日佳句卡片 + 4 张带图分类卡片」；点击进入某渠道 → renderChannelList（返回箭头 + 书目 chips + 摘录列表）；书本渠道内再按书目 `filterBookId` 筛选
+  - **分类底图**：4 张水墨国风插画 `art/book|film|comment|econ.jpg`（600×800，经 ImageGen 生成 + PIL 裁剪压缩），channelArt() 返回图片路径
   - 今日佳句：**纯前端计算**（节气寿星公式 + Open-Meteo 天气 + ipapi 定位 + 经典语录库），无后端依赖
   - 同步：改动 → markSyncDirty + 3 秒防抖 syncPush；启动/切前台/online 事件 → syncNow 拉取或补推；冲突以最后同步为准
   - 换机迁移：口令格式 `token|同步码`，一次粘贴完成绑定（syncSaveToken 解析 → syncJoin(code)）
   - normalizeData() 保证 quotes/books 恒为数组，防同步数据缺字段崩溃
-- **sw.js**：Service Worker，CACHE `'yulu-v5'`，导航 network-first（改 index.html 用户自动获新版；**改 sw.js 才需要升 CACHE 版本号**）
+- **sw.js**：Service Worker，CACHE `'yulu-v8'`，导航 network-first（改 index.html 用户自动获新版；**改 sw.js 才需要升 CACHE 版本号**）；APP_SHELL 含 4 张 art 底图预缓存
 - **manifest.webmanifest + icon-192/512.png**：PWA 安装（iOS Safari 添加到主屏幕）
 - **server.js**：Node 零依赖版（历史遗留，线上 GitHub Pages 版不需要它，仅沙箱演示用）
 
@@ -72,11 +72,12 @@ git add -A && git commit -m "余录 vX.X：改动说明" && git push origin main
 - **v1.0**：基础版（摘录 + 书目 + 今日佳句 + GitHub 云同步）
 - **v1.1**：换机迁移口令（一次粘贴）+ normalizeData 防崩溃
 - **v1.2**：离线记录自动补传（脏标记持久化 + online 事件自动推送）
-- **v1.3**：新增书目功能（书名/作者/分类/书脊颜色/读完标记，长按书脊移除）+ 品牌印章缩小
-- **v1.4**：摘录渠道分类（书本/影视/评论/经济四渠道 + 独立筛选 + 新增弹窗渠道切换）+ 书架改仿真实封面（N books 排版）+ 预置 4 本经济学经典 + 「搜罗相似句」接入智谱 AI
+- **v1.4**：渠道分类（书本/影视/评论/经济），摘录分渠道记录
+- **v1.5**：分类首页改版——首页只显示「今日佳句 + 带水墨插画的分类卡片」，点击分类进入看该渠道摘录；4 张 AI 水墨国风插画底图（art/*.jpg）
 
 ## 待办 / 备忘
 
-- 「相似佳句」AI 已接入智谱 AI（glm-4-flash，API Key 已内置于 SIMILAR_AI 配置），浏览器端 CORS 已验证放行，搜罗失败自动回落内置精选库
+- 「新增书目」入口仍是占位，未实现
+- 「相似佳句」AI 功能预留了 open.bigmodel.cn 接口，需要 API key
 - 网络热点源在纯前端版已去掉（CORS 限制），目前用节气 + 天气 + 经典库
 - 用户今日佳句选句规则：节气日按节气出句；平时优先《论语》《孟子》《道德经》
