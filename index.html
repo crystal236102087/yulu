@@ -97,6 +97,25 @@
       content: ''; position: absolute; left: 9px; top: 8%; bottom: 8%; width: 1px;
       background: rgba(255,255,255,0.16);
     }
+    /* 仿真实书籍封面（书架页用）：3:4 矩形，书名居中，顶部光 + 底部阴影 */
+    .book-cover {
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 4px 10px rgba(42,38,34,0.28);
+    }
+    .book-cover::before { /* 顶部柔光 */
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 46%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0));
+    }
+    .book-cover::after { /* 书脊细节：左缘一条竖高光 + 折痕 */
+      content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1px;
+      background: rgba(255,255,255,0.28);
+    }
+    .book-cover .cover-inner {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 8px 6px; text-align: center;
+    }
     /* 木质书架层板 */
     .shelf-board {
       height: 10px;
@@ -224,13 +243,18 @@
           <button onclick="closeAddModal()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
         </div>
         <div class="px-6 py-5 space-y-5">
-          <div class="grid grid-cols-2 gap-3">
+          <!-- 渠道切换：书本 / 影视台词 / 大神评论 / 经济原理 -->
+          <div>
+            <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">摘录类型</label>
+            <div id="add-channel" class="grid grid-cols-4 gap-2"></div>
+          </div>
+          <div id="add-book-row" class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">选书</label>
               <select id="add-book" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm font-bold"></select>
             </div>
-            <div>
-              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">出处</label>
+            <div id="add-source-cell">
+              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">出处 <span id="add-source-star" class="text-cinnabar">✦</span></label>
               <input id="add-source" type="text" placeholder="《论语·阳货》" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm">
             </div>
           </div>
@@ -348,6 +372,10 @@ const defaultData = {
     { id: 'b2', name: '孟子', author: '孟子及弟子', category: '国学经典', color: '#3a5666', finished: false, finishDate: '' },
     { id: 'b3', name: '平凡的世界', author: '路遥', category: '现当代文学', color: '#72855f', finished: true, finishDate: '2026-07-15' },
     { id: 'b4', name: '朝花夕拾', author: '鲁迅', category: '现代散文', color: '#9c7c35', finished: true, finishDate: '2026-06-30' },
+    { id: 'b5', name: '置身事内', author: '兰小欢', category: '经济学', color: '#8a6d3b', finished: false, finishDate: '' },
+    { id: 'b6', name: '经济学原理', author: '曼昆', category: '经济学', color: '#4a6670', finished: false, finishDate: '' },
+    { id: 'b7', name: '穷查理宝典', author: '查理·芒格', category: '经济学', color: '#5b4a6b', finished: false, finishDate: '' },
+    { id: 'b8', name: '国富论', author: '亚当·斯密', category: '经济学', color: '#6b4a3a', finished: false, finishDate: '' },
   ],
   quotes: [
     {
@@ -387,20 +415,57 @@ const defaultData = {
       related: [],
       createdAt: Date.now() - 86400000 * 9,
     },
+    {
+      id: 'q4', channel: '影视', bookId: null,
+      original: '有些鸟儿是关不住的，它们的每一片羽毛都闪耀着自由的光辉。',
+      source: '电影《肖申克的救赎》',
+      understanding: '真正的自由不被高墙囚禁，心怀希望的人，在哪都能活出尊严。',
+      example: '身陷困境时，别把牢笼当全部——学会在心里保留一片不被困住的地方。',
+      related: [{ type: 'English', text: 'Hope is a good thing, maybe the best of things.', source: 'The Shawshank Redemption' }],
+      createdAt: Date.now() - 86400000 * 3,
+    },
+    {
+      id: 'q5', channel: '评论', bookId: null,
+      original: '知识不是用来炫耀的，而是用来让你在关键时刻做出更好的判断。',
+      source: '知乎高赞评论',
+      understanding: '读书的价值体现在决策，而不是谈资。',
+      example: '同样面对一个机会，多读一本书的人往往多看到一层风险，也就多一分从容。',
+      related: [],
+      createdAt: Date.now() - 86400000 * 4,
+    },
+    {
+      id: 'q6', channel: '经济', bookId: null,
+      original: '天下没有免费的午餐，任何选择都有它的代价。',
+      source: '经济学原理 · 机会成本',
+      understanding: '你花一小时刷手机，就失去了一小时能做别的事的价值——这就是机会成本。',
+      example: '纠结要不要熬夜时，想想这一夜你放弃了什么，答案往往就清楚了。',
+      related: [{ type: 'English', text: 'There is no such thing as a free lunch.', source: 'Milton Friedman' }],
+      createdAt: Date.now() - 86400000 * 5,
+    },
   ],
 };
 
-let data = JSON.parse(JSON.stringify(defaultData));
+let data = normalizeData(JSON.parse(JSON.stringify(defaultData)));
 let currentTab = 'quotes';
 let filterBookId = 'all';
+let filterChannel = '书本';   // 当前渠道：书本 / 影视 / 评论 / 经济 / 全部
 let currentDetailId = null;
+
+/* 渠道定义：书本外，还可摘录影视台词、大神评论、经济原理 */
+const CHANNELS = [
+  { id: '书本', icon: '📖', color: '#8e3b2c' },
+  { id: '影视', icon: '🎬', color: '#5b4a6b' },
+  { id: '评论', icon: '💬', color: '#4a6670' },
+  { id: '经济', icon: '📈', color: '#8a6d3b' },
+];
+const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a6d3b', '书本': '#8e3b2c' };
 
 // ==================== 基础 ====================
 /* 数据规范化：确保 quotes / books 恒为数组（防止同步数据缺字段导致渲染崩溃） */
 function normalizeData(d) {
   if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(defaultData));
   return {
-    quotes: Array.isArray(d.quotes) ? d.quotes : [],
+    quotes: Array.isArray(d.quotes) ? d.quotes.map(q => ({ ...q, channel: q.channel || '书本' })) : [],
     books: Array.isArray(d.books) ? d.books : [],
   };
 }
@@ -448,18 +513,33 @@ function render() {
 
 // ---------- 文摘页：笺纸卡片 ----------
 function renderQuotes() {
-  const quotes = filterBookId === 'all' ? data.quotes : data.quotes.filter(q => q.bookId === filterBookId);
-  const chips = [{ id: 'all', name: '全部' }, ...data.books].map(b => `
-    <button onclick="filterBookId='${b.id}';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card text-inklight transition-all ${filterBookId === b.id ? 'chip-on' : ''}">${b.name}<span class="opacity-50 ml-1 num-badge">${b.id==='all'?data.quotes.length:data.quotes.filter(q=>q.bookId===b.id).length}</span></button>
+  // 先按渠道过滤（书本/影视/评论/经济/全部）
+  const byChannel = filterChannel === '全部' ? data.quotes : data.quotes.filter(q => q.channel === filterChannel);
+  // 书本渠道内，再按书目过滤
+  const quotes = (filterChannel === '书本' && filterBookId !== 'all')
+    ? byChannel.filter(q => q.bookId === filterBookId)
+    : byChannel;
+
+  // 第一层：渠道切换
+  const channelChips = [{ id: '全部', icon: '☯' }, ...CHANNELS.map(c => ({ id: c.id, icon: c.icon }))].map(c => `
+    <button onclick="filterChannel='${c.id}';filterBookId='all';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card transition-all ${filterChannel === c.id ? 'chip-on' : 'text-inklight'}">${c.icon} ${c.id}</button>
   `).join('');
+
+  // 第二层：仅书本渠道显示书目 chips
+  const bookChips = (filterChannel === '书本') ? `<div class="flex gap-2 overflow-x-auto scroll-hide pb-1 mt-1.5">${[{ id: 'all', name: '全部书' }, ...data.books].map(b => `
+    <button onclick="filterBookId='${b.id}';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card text-inklight transition-all ${filterBookId === b.id ? 'chip-on' : ''}">${b.name}<span class="opacity-50 ml-1 num-badge">${b.id==='all'?data.quotes.filter(q=>q.channel==='书本').length:data.quotes.filter(q=>q.bookId===b.id).length}</span></button>
+  `).join('')}</div>` : '';
 
   return `
     <div id="daily-card"></div>
-    <div class="flex gap-2 overflow-x-auto scroll-hide pb-4 -mt-1">${chips}</div>
+    <div class="flex gap-2 overflow-x-auto scroll-hide pb-1 -mt-1">
+      ${channelChips}
+    </div>
+    ${bookChips}
     ${quotes.length === 0 ? `
       <div class="text-center py-24 text-inklight fade-in">
         <div class="brush-title text-7xl opacity-25 mb-3">静</div>
-        <p class="text-sm font-bold">尚无文摘</p>
+        <p class="text-sm font-bold">暂无${filterChannel === '全部' ? '佳句' : filterChannel}</p>
         <p class="text-xs mt-1.5 opacity-60 tracking-widest">点下方朱红按钮 摘下第一句</p>
       </div>` : ''}
     <div class="space-y-5">
@@ -469,8 +549,10 @@ function renderQuotes() {
 }
 
 function renderQuoteCard(q) {
+  const isBook = q.channel === '书本';
   const book = data.books.find(b => b.id === q.bookId);
-  const c = book ? book.color : '#8e3b2c';
+  const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
+  const tagLabel = isBook ? (book ? book.name : '未分类') : (q.channel || '佳句');
   const relatedCount = (q.related || []).length;
   const meta = [];
   if (q.example) meta.push('举例');
@@ -485,7 +567,7 @@ function renderQuoteCard(q) {
         <div class="flex-1 px-5 py-4 min-w-0">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
-              <span class="seal-tag" style="background:${c}">${book ? book.name : '未分类'}</span>
+              <span class="seal-tag" style="background:${c}">${tagLabel}</span>
               <span class="text-[10px] text-inklight num-badge">${fmtDate(q.createdAt)}</span>
             </div>
             ${relatedCount ? `<span class="ghost-seal" style="border-color:${c};color:${c}">佳句 ×${relatedCount}</span>` : ''}
@@ -511,41 +593,44 @@ function renderQuoteCard(q) {
   `;
 }
 
-// ---------- 书架页：真实书架 ----------
+// ---------- 书架页：仿真实书架（分类标题 + N books，封面并排） ----------
 function renderShelf() {
   const cats = [...new Set(data.books.map(b => b.category))];
   return `
-    <div class="space-y-7">
+    <div class="space-y-8">
     ${cats.map(cat => {
       const books = data.books.filter(b => b.category === cat);
       return `
       <div class="fade-in">
-        <div class="flex items-baseline gap-2.5 mb-4">
-          <span class="w-[3px] h-4 bg-cinnabar rounded-full"></span>
-          <h3 class="font-black text-[15px] tracking-[0.2em]">${cat}</h3>
-          <span class="text-[10px] text-inklight num-badge">${books.length} 册</span>
-          <div class="flex-1 h-px bg-line"></div>
+        <!-- 分类标题：左标题 + 右 N books（参考排版） -->
+        <div class="flex items-end justify-between mb-4">
+          <h3 class="font-black text-[16px] tracking-[0.15em]">${cat}</h3>
+          <span class="text-[11px] text-inklight num-badge mb-0.5">${books.length} books</span>
         </div>
-        <!-- 一层书架 -->
+        <!-- 一层书架：封面并排 -->
         <div class="relative px-1">
-          <div class="flex items-end justify-start gap-3 flex-wrap min-h-[150px] pb-1">
+          <div class="flex items-end justify-start gap-4 flex-wrap min-h-[190px] pb-1">
             ${books.map(b => {
               const n = data.quotes.filter(q => q.bookId === b.id).length;
-              const h = 138 + (b.name.length % 3) * 8; // 高低错落
+              const h = 168 + (b.name.length % 3) * 7; // 高低错落
               return `
               <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
                 onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
                 ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
-                class="active:scale-95 transition-transform" style="width:86px">
-                <div class="book-spine mx-auto flex justify-center relative" style="background:linear-gradient(160deg,${b.color},${b.color}d0);height:${h}px">
-                  <span class="v-text text-[#fff6ec] font-bold text-[13px] pt-3.5 pb-3.5" style="text-shadow:0 1px 2px rgba(0,0,0,0.3)">${b.name}</span>
+                class="active:scale-95 transition-transform" style="width:98px">
+                <div class="book-cover mx-auto relative" style="background:linear-gradient(165deg,${b.color},${b.color}d0);height:${h}px">
+                  <div class="cover-inner">
+                    <p class="text-[#fff6ec] font-black text-[14px] leading-snug tracking-[0.06em]" style="text-shadow:0 1px 2px rgba(0,0,0,0.35)">${b.name}</p>
+                    ${b.author ? `<p class="text-[#fff6ec]/80 text-[10px] mt-1.5 tracking-widest" style="text-shadow:0 1px 2px rgba(0,0,0,0.3)">${b.author}</p>` : ''}
+                  </div>
+                  <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.18)"></span>
                   ${b.finished
-                    ? `<span class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gold border-2 border-paper flex items-center justify-center text-[8px] text-white font-black shadow">✓</span>`
-                    : `<span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] bg-ink/45 text-paper px-1.5 py-0.5 rounded-full font-bold tracking-widest">在读</span>`}
+                    ? `<span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gold border-2 border-paper flex items-center justify-center text-[9px] text-white font-black shadow">✓</span>`
+                    : `<span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] bg-ink/50 text-paper px-2 py-0.5 rounded-full font-bold tracking-widest">在读</span>`}
                 </div>
                 <div class="mt-2 text-center">
-                  <p class="text-[11px] font-bold truncate">${b.author}</p>
-                  <p class="text-[10px] text-cinnabar font-bold num-badge mt-0.5">${n} 摘${b.finished ? ' · 读完' : ''}</p>
+                  <p class="text-[11px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
+                  <p class="text-[10px] text-cinnabar font-bold num-badge mt-0.5">${n} 摘</p>
                 </div>
               </button>`;
             }).join('')}
@@ -712,8 +797,10 @@ function openDetail(id) {
   const q = data.quotes.find(x => x.id === id);
   if (!q) return;
   currentDetailId = id;
+  const isBook = q.channel === '书本';
   const book = data.books.find(b => b.id === q.bookId);
-  const c = book ? book.color : '#8e3b2c';
+  const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
+  const tagLabel = isBook ? (book ? book.name : '未分类') : (q.channel || '佳句');
   const block = (label, text) => text ? `
     <div class="mb-5 relative pl-4">
       <div class="absolute left-0 top-1.5 bottom-1 w-[2px] rounded" style="background:linear-gradient(180deg,${c},${c}33)"></div>
@@ -722,7 +809,7 @@ function openDetail(id) {
     </div>` : '';
   document.getElementById('detail-body').innerHTML = `
     <div class="flex items-center gap-2 mb-4">
-      <span class="seal-tag" style="background:${c}">${book ? book.name : '未分类'}</span>
+      <span class="seal-tag" style="background:${c}">${tagLabel}</span>
       <span class="text-[11px] text-inklight num-badge">${fmtDate(q.createdAt)} 摘录</span>
     </div>
     <div class="relative letter-card rounded-2xl p-6 my-2">
@@ -775,9 +862,12 @@ document.getElementById('detail-del').onclick = function(e) {
 
 // ==================== 添加 ====================
 let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
+let addChannel = '书本';     // 当前新增摘录的渠道
 function openAddModal() {
+  addChannel = '书本';
   const sel = document.getElementById('add-book');
   sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
+  renderAddChannel();  // 会正确设置选书/出处的显隐与布局
   ['add-original','add-source','add-understanding','add-example','add-note','add-related'].forEach(id => document.getElementById(id).value = '');
   // 重置「相似佳句 · 自动搜罗」区
   pendingAutoSimilar = [];
@@ -788,6 +878,25 @@ function openAddModal() {
   document.getElementById('btn-similar').classList.remove('opacity-50','pointer-events-none');
   document.getElementById('add-modal').classList.remove('hidden');
 }
+function renderAddChannel() {
+  document.getElementById('add-channel').innerHTML = CHANNELS.map(c => `
+    <button type="button" onclick="setAddChannel('${c.id}')"
+      class="py-2.5 rounded-xl border-2 text-xs font-bold transition-all active:scale-95 ${addChannel === c.id ? 'text-white shadow' : 'border-line bg-paper text-inklight'}"
+      style="${addChannel === c.id ? 'background:' + c.color + ';border-color:' + c.color : ''}">${c.icon} ${c.id}</button>`).join('');
+  const isBook = addChannel === '书本';
+  // 书本渠道：选书 + 出处并排；非书本：只显示出处，占满整行
+  const bookCell = document.querySelector('#add-book-row > div:nth-child(1)');
+  const srcCell = document.getElementById('add-source-cell');
+  document.getElementById('add-book-row').classList.toggle('grid-cols-2', isBook);
+  document.getElementById('add-book-row').classList.toggle('grid-cols-1', !isBook);
+  bookCell.style.display = isBook ? '' : 'none';
+  srcCell.style.display = '';
+  document.getElementById('add-source-star').style.visibility = 'hidden';
+  const src = document.getElementById('add-source');
+  if (!isBook) src.placeholder = CHANNELS.find(c => c.id === addChannel).icon + ' 出处，如：电影《肖申克的救赎》';
+  else src.placeholder = '《论语·阳货》';
+}
+function setAddChannel(id) { addChannel = id; renderAddChannel(); }
 function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
 
 // ==================== 新增书目 ====================
@@ -877,11 +986,13 @@ function saveQuote() {
     return cb ? cb.checked : false;
   }).map(s => ({ type: s.type, text: s.text, source: s.source, from: s.from }));
   const related = [...autoRelated, ...manualRelated];
+  const isBook = addChannel === '书本';
   data.quotes.unshift({
     id: 'q' + Date.now(),
-    bookId: document.getElementById('add-book').value,
+    channel: addChannel,
+    bookId: isBook ? document.getElementById('add-book').value : null,
     original,
-    source: document.getElementById('add-source').value.trim() || '未注明出处',
+    source: document.getElementById('add-source').value.trim() || (isBook ? '未注明出处' : addChannel),
     understanding: document.getElementById('add-understanding').value.trim(),
     example: document.getElementById('add-example').value.trim(),
     note: document.getElementById('add-note').value.trim(),
