@@ -450,15 +450,21 @@ let currentTab = 'quotes';
 let filterBookId = 'all';
 let filterChannel = '书本';   // 当前渠道：书本 / 影视 / 评论 / 经济 / 全部
 let currentDetailId = null;
+let homeView = 'gallery';    // 'gallery'=分类首页；其他值=某个渠道 id（进入分类看文摘）
 
 /* 渠道定义：书本外，还可摘录影视台词、大神评论、经济原理 */
 const CHANNELS = [
-  { id: '书本', icon: '📖', color: '#8e3b2c' },
-  { id: '影视', icon: '🎬', color: '#5b4a6b' },
-  { id: '评论', icon: '💬', color: '#4a6670' },
-  { id: '经济', icon: '📈', color: '#8a6d3b' },
+  { id: '书本', icon: '📖', color: '#8e3b2c', sub: '万卷古今消永日', img: 'book' },
+  { id: '影视', icon: '🎬', color: '#5b4a6b', sub: '一帧光影一句情', img: 'film' },
+  { id: '评论', icon: '💬', color: '#4a6670', sub: '妙语连珠见真知', img: 'comment' },
+  { id: '经济', icon: '📈', color: '#8a6d3b', sub: '格物致知观世相', img: 'econ' },
 ];
 const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a6d3b', '书本': '#8e3b2c' };
+/* 分类卡片底图：水墨国风插画（art/ 下 4 张，按渠道对应意境）*/
+function channelArt(id) {
+  const art = { book: 'art/book.jpg', film: 'art/film.jpg', comment: 'art/comment.jpg', econ: 'art/econ.jpg' };
+  return art[id] || '';
+}
 
 // ==================== 基础 ====================
 /* 数据规范化：确保 quotes / books 恒为数组（防止同步数据缺字段导致渲染崩溃） */
@@ -511,39 +517,77 @@ function render() {
   if (currentTab === 'quotes') renderDaily(); // 首页顶部今日卡片（异步数据到了就填）
 }
 
-// ---------- 文摘页：笺纸卡片 ----------
+// ---------- 文摘页：首页=分类卡片，点击进入分类看文摘 ----------
 function renderQuotes() {
-  // 先按渠道过滤（书本/影视/评论/经济/全部）
-  const byChannel = filterChannel === '全部' ? data.quotes : data.quotes.filter(q => q.channel === filterChannel);
-  // 书本渠道内，再按书目过滤
-  const quotes = (filterChannel === '书本' && filterBookId !== 'all')
+  // 分类首页：今日佳句 + 4 张分类卡片
+  if (homeView === 'gallery') return renderGallery();
+  return renderChannelList();
+}
+
+// 分类首页：今日佳句 + 分类卡片网格
+function renderGallery() {
+  const grid = CHANNELS.map(c => {
+    const n = (c.id === '书本')
+      ? data.quotes.filter(q => q.channel === '书本').length
+      : data.quotes.filter(q => q.channel === c.id).length;
+    const img = channelArt(c.img);
+    return `
+      <button onclick="homeView='${c.id}';filterBookId='all';render()" class="relative rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform fade-in shadow-card" style="height:150px">
+        ${img ? `<img src="${img}" alt="${c.id}" loading="lazy" class="absolute inset-0 w-full h-full object-cover">` : `<div class="absolute inset-0" style="background:${c.color}"></div>`}
+        <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 38%,rgba(24,18,14,0.62) 88%)"></div>
+        <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg,transparent,rgba(255,246,236,0.5),transparent)"></div>
+        <div class="absolute left-3.5 bottom-3 right-3.5">
+          <p class="text-white font-black text-[19px] tracking-[0.12em] flex items-center gap-1.5" style="text-shadow:0 2px 7px rgba(0,0,0,0.5)">${c.icon} ${c.id}</p>
+          <p class="text-white/90 text-[10.5px] mt-1 tracking-widest" style="text-shadow:0 1px 4px rgba(0,0,0,0.5)">${c.sub} · ${n} 条</p>
+        </div>
+        <span class="absolute right-2.5 bottom-2.5 w-6 h-6 rounded-full bg-cinnabar/90 text-white text-[11px] font-black flex items-center justify-center shadow" style="border:1px solid rgba(255,246,236,0.5)">${c.id[0]}</span>
+      </button>`;
+  }).join('');
+  return `
+    <div id="daily-card"></div>
+    <div class="mb-4">
+      <div class="flex items-baseline gap-2.5 mb-3.5">
+        <span class="w-[3px] h-4 bg-cinnabar rounded-full"></span>
+        <h3 class="font-black text-[15px] tracking-[0.2em]">分类</h3>
+        <span class="text-[10px] text-inklight">按来源整理你的摘录</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3.5">${grid}</div>
+    </div>
+  `;
+}
+
+// 进入某分类后的文摘列表
+function renderChannelList() {
+  const byChannel = data.quotes.filter(q => q.channel === homeView);
+  const quotes = (homeView === '书本' && filterBookId !== 'all')
     ? byChannel.filter(q => q.bookId === filterBookId)
     : byChannel;
+  const ch = CHANNELS.find(c => c.id === homeView) || { icon: '', id: homeView, color: '#8e3b2c', sub: '' };
 
-  // 第一层：渠道切换
-  const channelChips = [{ id: '全部', icon: '☯' }, ...CHANNELS.map(c => ({ id: c.id, icon: c.icon }))].map(c => `
-    <button onclick="filterChannel='${c.id}';filterBookId='all';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card transition-all ${filterChannel === c.id ? 'chip-on' : 'text-inklight'}">${c.icon} ${c.id}</button>
-  `).join('');
-
-  // 第二层：仅书本渠道显示书目 chips
-  const bookChips = (filterChannel === '书本') ? `<div class="flex gap-2 overflow-x-auto scroll-hide pb-1 mt-1.5">${[{ id: 'all', name: '全部书' }, ...data.books].map(b => `
+  // 书本分类内：再按书目筛选
+  const bookChips = (homeView === '书本') ? `<div class="flex gap-2 overflow-x-auto scroll-hide pb-1 mt-1.5">${[{ id: 'all', name: '全部书' }, ...data.books].map(b => `
     <button onclick="filterBookId='${b.id}';render()" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border border-line bg-card text-inklight transition-all ${filterBookId === b.id ? 'chip-on' : ''}">${b.name}<span class="opacity-50 ml-1 num-badge">${b.id==='all'?data.quotes.filter(q=>q.channel==='书本').length:data.quotes.filter(q=>q.bookId===b.id).length}</span></button>
   `).join('')}</div>` : '';
 
   return `
-    <div id="daily-card"></div>
-    <div class="flex gap-2 overflow-x-auto scroll-hide pb-1 -mt-1">
-      ${channelChips}
-    </div>
-    ${bookChips}
-    ${quotes.length === 0 ? `
-      <div class="text-center py-24 text-inklight fade-in">
-        <div class="brush-title text-7xl opacity-25 mb-3">静</div>
-        <p class="text-sm font-bold">暂无${filterChannel === '全部' ? '佳句' : filterChannel}</p>
-        <p class="text-xs mt-1.5 opacity-60 tracking-widest">点下方朱红按钮 摘下第一句</p>
-      </div>` : ''}
-    <div class="space-y-5">
-      ${quotes.map(q => renderQuoteCard(q)).join('')}
+    <div class="mb-4">
+      <div class="flex items-center gap-3 mb-4">
+        <button onclick="homeView='gallery';render()" class="w-9 h-9 rounded-full bg-card border border-line text-inklight font-bold active:scale-95 transition-transform shrink-0">←</button>
+        <div class="flex items-baseline gap-2.5 min-w-0">
+          <h3 class="font-black text-[18px] tracking-[0.12em]" style="color:${ch.color}">${ch.icon} ${ch.id}</h3>
+          <span class="text-[10px] text-inklight num-badge">${quotes.length} 条</span>
+        </div>
+      </div>
+      ${bookChips}
+      ${quotes.length === 0 ? `
+        <div class="text-center py-20 text-inklight fade-in">
+          <div class="brush-title text-7xl opacity-25 mb-3">静</div>
+          <p class="text-sm font-bold">暂无${ch.id}摘录</p>
+          <p class="text-xs mt-1.5 opacity-60 tracking-widest">点下方朱红按钮 摘下第一句</p>
+        </div>` : ''}
+      <div class="space-y-5">
+        ${quotes.map(q => renderQuoteCard(q)).join('')}
+      </div>
     </div>
   `;
 }
