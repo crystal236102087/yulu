@@ -462,7 +462,8 @@ const CHANNELS = [
 const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a6d3b', '书本': '#8e3b2c' };
 /* 分类卡片底图：水墨国风插画（art/ 下 4 张，按渠道对应意境）*/
 function channelArt(id) {
-  const art = { book: 'art/book.jpg', film: 'art/film.jpg', comment: 'art/comment.jpg', econ: 'art/econ.jpg' };
+  // ?v=2 版本参数：换图时 +1，绕过 GitHub Pages CDN 旧缓存，确保用户拿到新图
+  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=2', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=2' };
   return art[id] || '';
 }
 
