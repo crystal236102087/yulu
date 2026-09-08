@@ -1,11 +1,15 @@
 /* 余录 · Service Worker —— 离线缓存 + PWA 安装支持 */
-const CACHE = 'yulu-v7';
+const CACHE = 'yulu-v8';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './art/book.jpg',
+  './art/film.jpg',
+  './art/comment.jpg',
+  './art/econ.jpg'
 ];
 
 /* 安装：预缓存应用外壳 */
