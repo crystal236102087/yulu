@@ -238,15 +238,15 @@
         <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-md bg-cinnabar flex items-center justify-center"><span class="text-white brush-title text-lg leading-none">摘</span></div>
-            <h3 class="font-black text-lg tracking-wide">新摘一句</h3>
+            <h3 id="add-modal-title" class="font-black text-lg tracking-wide">新摘一句</h3>
           </div>
           <button onclick="closeAddModal()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
         </div>
         <div class="px-6 py-5 space-y-5">
-          <!-- 渠道切换：书本 / 影视台词 / 大神评论 / 经济原理 -->
+          <!-- 渠道切换：书本 / 影视台词 / 大神评论 / 经济原理 / 随笔 -->
           <div>
-            <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">摘录类型</label>
-            <div id="add-channel" class="grid grid-cols-4 gap-2"></div>
+            <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">记录类型</label>
+            <div id="add-channel" class="grid grid-cols-5 gap-1.5"></div>
           </div>
           <div id="add-book-row" class="grid grid-cols-2 gap-3">
             <div>
@@ -259,9 +259,18 @@
             </div>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">原文 <span class="text-cinnabar">✦</span></label>
+            <label id="add-original-label" class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">原文 <span class="text-cinnabar">✦</span></label>
             <textarea id="add-original" rows="3" placeholder="抄录打动你的句子…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] leading-relaxed resize-none"></textarea>
           </div>
+          <!-- 随笔配图：拍照 / 相册，自动压缩 -->
+          <div id="add-photo-row" style="display:none">
+            <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">配图 <span class="text-inklight font-normal tracking-normal">（可选 · 记下此刻的画面）</span></label>
+            <div id="add-photo-preview" class="hidden mb-2"></div>
+            <button type="button" id="btn-add-photo" onclick="document.getElementById('add-photo-input').click()"
+              class="w-full py-3 rounded-xl border-2 border-dashed border-line bg-paper text-xs font-bold text-inklight active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5">📷 选一张图（拍照或相册）</button>
+            <input type="file" id="add-photo-input" accept="image/*" class="hidden" onchange="pickEssayPhoto(this)">
+          </div>
+          <div id="add-extra">
           <div>
             <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">理解</label>
             <textarea id="add-understanding" rows="3" placeholder="用自己的话，说说它是什么意思…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm leading-relaxed resize-none"></textarea>
@@ -293,7 +302,8 @@
               <p class="text-[10px] text-inklight mt-1.5">以「古文｜」或「English｜」开头可自动分类，用——注明出处</p>
             </div>
           </div>
-          <button onclick="saveQuote()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#b8452f] to-[#96301f] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-float mb-8">收 入 书 囊</button>
+          </div>
+          <button id="add-save-btn" onclick="saveQuote()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#b8452f] to-[#96301f] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-float mb-8">收 入 书 囊</button>
         </div>
       </div>
     </div>
@@ -452,18 +462,19 @@ let filterChannel = '书本';   // 当前渠道：书本 / 影视 / 评论 / 经
 let currentDetailId = null;
 let homeView = 'gallery';    // 'gallery'=分类首页；其他值=某个渠道 id（进入分类看文摘）
 
-/* 渠道定义：书本外，还可摘录影视台词、大神评论、经济原理 */
+/* 渠道定义：书本外，还可摘录影视台词、大神评论、经济原理；随笔是自己的日常心记 */
 const CHANNELS = [
   { id: '书本', icon: '📖', color: '#8e3b2c', sub: '万卷古今消永日', img: 'book' },
   { id: '影视', icon: '🎬', color: '#5b4a6b', sub: '一帧光影一句情', img: 'film' },
   { id: '评论', icon: '💬', color: '#4a6670', sub: '妙语连珠见真知', img: 'comment' },
   { id: '经济', icon: '📈', color: '#8a6d3b', sub: '格物致知观世相', img: 'econ' },
+  { id: '随笔', icon: '✍️', color: '#56694a', sub: '信笔由心 皆成文章', img: 'essay' },
 ];
-const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a6d3b', '书本': '#8e3b2c' };
-/* 分类卡片底图：水墨国风插画（art/ 下 4 张，按渠道对应意境）*/
+const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a6d3b', '书本': '#8e3b2c', '随笔': '#56694a' };
+/* 分类卡片底图：水墨国风插画（art/ 下 5 张，按渠道对应意境）*/
 function channelArt(id) {
   // ?v=N 版本参数：换图时把对应图 +1，绕过 GitHub Pages CDN 旧缓存，确保用户拿到新图
-  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=10' };
+  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=10', essay: 'art/essay.jpg?v=2' };
   return art[id] || '';
 }
 
@@ -525,12 +536,10 @@ function renderQuotes() {
   return renderChannelList();
 }
 
-// 分类首页：今日佳句 + 分类卡片网格
+// 分类首页：今日佳句 + 分类卡片网格 + 随笔全宽卡
 function renderGallery() {
-  const grid = CHANNELS.map(c => {
-    const n = (c.id === '书本')
-      ? data.quotes.filter(q => q.channel === '书本').length
-      : data.quotes.filter(q => q.channel === c.id).length;
+  const grid = CHANNELS.filter(c => c.id !== '随笔').map(c => {
+    const n = data.quotes.filter(q => q.channel === c.id).length;
     const img = channelArt(c.img);
     return `
       <button onclick="homeView='${c.id}';filterBookId='all';render()" class="relative rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform fade-in shadow-card" style="height:150px">
@@ -543,6 +552,11 @@ function renderGallery() {
         </div>
       </button>`;
   }).join('');
+  // 随笔：自己的日常心记（全宽长条卡，与摘录分类区分）
+  const eN = data.quotes.filter(q => q.channel === '随笔').length;
+  const eImg = channelArt('essay');
+  const lastEssay = data.quotes.find(q => q.channel === '随笔');
+  const lastHint = lastEssay ? `${fmtDate(lastEssay.createdAt)} 的那篇` : '写下第一篇';
   return `
     <div id="daily-card"></div>
     <div class="mb-4">
@@ -552,6 +566,26 @@ function renderGallery() {
         <span class="text-[10px] text-inklight">按来源整理你的摘录</span>
       </div>
       <div class="grid grid-cols-2 gap-3.5">${grid}</div>
+    </div>
+    <div class="mb-4">
+      <div class="flex items-baseline gap-2.5 mb-3.5">
+        <span class="w-[3px] h-4 rounded-full" style="background:#56694a"></span>
+        <h3 class="font-black text-[15px] tracking-[0.2em]">随笔</h3>
+        <span class="text-[10px] text-inklight">心之所记 · 皆成文章</span>
+      </div>
+      <button onclick="homeView='随笔';filterBookId='all';render()" class="relative w-full rounded-2xl overflow-hidden text-left active:scale-[0.99] transition-transform fade-in shadow-card" style="height:112px">
+        ${eImg ? `<img src="${eImg}" alt="随笔" loading="lazy" class="absolute inset-0 w-full h-full object-cover">` : `<div class="absolute inset-0" style="background:#56694a"></div>`}
+        <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(24,18,14,0.02) 0%,rgba(24,18,14,0.14) 45%,rgba(24,18,14,0.62) 100%)"></div>
+        <div class="absolute inset-0" style="background:linear-gradient(90deg,rgba(24,18,14,0.34) 0%,rgba(24,18,14,0.10) 42%,transparent 68%)"></div>
+        <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg,transparent,rgba(255,246,236,0.5),transparent)"></div>
+        <div class="absolute left-3.5 bottom-3 right-3.5 flex items-end justify-between">
+          <div class="min-w-0">
+            <p class="text-white font-black text-[19px] tracking-[0.12em] flex items-center gap-1.5" style="text-shadow:0 2px 7px rgba(0,0,0,0.5)">✍️ 我的随笔</p>
+            <p class="text-white/90 text-[10.5px] mt-1 tracking-widest truncate" style="text-shadow:0 1px 4px rgba(0,0,0,0.5)">${eN ? `${eN} 篇 · ${lastHint}` : '写下第一篇'}</p>
+          </div>
+          <div role="button" onclick="event.stopPropagation();openAddModal('随笔')" class="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-black text-white active:scale-95 transition-transform" style="background:#56694a;border:1px solid rgba(255,246,236,0.45);text-shadow:0 1px 3px rgba(0,0,0,0.4)">✍️ 写一篇</div>
+        </div>
+      </button>
     </div>
   `;
 }
@@ -581,9 +615,9 @@ function renderChannelList() {
       ${bookChips}
       ${quotes.length === 0 ? `
         <div class="text-center py-20 text-inklight fade-in">
-          <div class="brush-title text-7xl opacity-25 mb-3">静</div>
-          <p class="text-sm font-bold">暂无${ch.id}摘录</p>
-          <p class="text-xs mt-1.5 opacity-60 tracking-widest">点下方朱红按钮 摘下第一句</p>
+          <div class="brush-title text-7xl opacity-25 mb-3">${ch.id === '随笔' ? '笔' : '静'}</div>
+          <p class="text-sm font-bold">暂无${ch.id}${ch.id === '随笔' ? '' : '摘录'}</p>
+          <p class="text-xs mt-1.5 opacity-60 tracking-widest">${ch.id === '随笔' ? '点下方朱红按钮 写下第一篇' : '点下方朱红按钮 摘下第一句'}</p>
         </div>` : ''}
       <div class="space-y-5">
         ${quotes.map(q => renderQuoteCard(q)).join('')}
@@ -593,6 +627,7 @@ function renderChannelList() {
 }
 
 function renderQuoteCard(q) {
+  if (q.channel === '随笔') return renderEssayCard(q);   // 随笔用信笺日记卡
   const isBook = q.channel === '书本';
   const book = data.books.find(b => b.id === q.bookId);
   const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
@@ -631,6 +666,33 @@ function renderQuoteCard(q) {
             ${meta.map(m => `<span class="text-[10px] font-bold text-inklight bg-paper border border-line rounded-full px-2.5 py-0.5">${m}</span>`).join('')}
             <span class="ml-auto text-[10px] text-cinnabar/60 font-bold">点开详注 →</span>
           </div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* 随笔卡片：信笺日记风（日期 + 配图 + 正文直接可读，多行截断点开看全文） */
+function renderEssayCard(q) {
+  const d = new Date(q.createdAt);
+  const week = ['日','一','二','三','四','五','六'][d.getDay()];
+  const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 · 周${week}`;
+  const c = '#56694a';
+  const long = q.original.length > 96;
+  return `
+    <div class="letter-card rounded-2xl overflow-hidden cursor-pointer fade-in relative" onclick="openDetail('${q.id}')">
+      <span class="corner-deco border-l-2 border-t-2" style="left:8px;top:8px;border-color:${c}66"></span>
+      <span class="corner-deco border-r-2 border-b-2" style="right:8px;bottom:8px;border-color:${c}66"></span>
+      ${q.photo ? `<div class="relative"><img src="${q.photo}" alt="随笔配图" loading="lazy" class="w-full object-cover" style="max-height:230px"><div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 75%,rgba(246,238,227,0.35))"></div></div>` : ''}
+      <div class="flex">
+        <div class="w-[7px] shrink-0" style="background:linear-gradient(180deg,${c},${c}aa)"></div>
+        <div class="flex-1 px-5 py-4 min-w-0">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-[10.5px] text-inklight num-badge tracking-widest">${dateStr}</span>
+            <span class="ghost-seal" style="border-color:${c};color:${c}">随笔</span>
+          </div>
+          <p class="text-[14.5px] leading-[2.0] text-ink whitespace-pre-wrap" ${long ? 'style="display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden"' : ''}>${q.original}</p>
+          ${long ? `<p class="text-right text-[10px] text-cinnabar/70 font-bold mt-2">点开全文 →</p>` : ''}
         </div>
       </div>
     </div>
@@ -842,6 +904,7 @@ function openDetail(id) {
   if (!q) return;
   currentDetailId = id;
   const isBook = q.channel === '书本';
+  const isEssay = q.channel === '随笔';
   const book = data.books.find(b => b.id === q.bookId);
   const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
   const tagLabel = isBook ? (book ? book.name : '未分类') : (q.channel || '佳句');
@@ -854,15 +917,20 @@ function openDetail(id) {
   document.getElementById('detail-body').innerHTML = `
     <div class="flex items-center gap-2 mb-4">
       <span class="seal-tag" style="background:${c}">${tagLabel}</span>
-      <span class="text-[11px] text-inklight num-badge">${fmtDate(q.createdAt)} 摘录</span>
+      <span class="text-[11px] text-inklight num-badge">${fmtDate(q.createdAt)} ${isEssay ? '随笔' : '摘录'}</span>
     </div>
     <div class="relative letter-card rounded-2xl p-6 my-2">
       <span class="corner-deco border-l-2 border-t-2" style="left:7px;top:7px"></span>
       <span class="corner-deco border-r-2 border-b-2" style="right:7px;bottom:7px"></span>
       <span class="big-quote absolute -top-2 left-4 text-[52px] select-none">「</span>
-      <p class="text-[17px] leading-[2.1] font-black pl-6 pt-2">${q.original}</p>
-      <p class="text-right text-xs text-inklight mt-3 pr-2">—— ${q.source}</p>
+      <p class="text-[17px] leading-[2.1] font-black pl-6 pt-2 whitespace-pre-wrap">${q.original}</p>
+      ${q.source ? `<p class="text-right text-xs text-inklight mt-3 pr-2">—— ${q.source}</p>` : ''}
     </div>
+    ${q.photo ? `
+    <div class="mt-4 fade-in">
+      <img src="${q.photo}" alt="随笔配图" class="w-full rounded-2xl shadow-card border-2 border-line/60">
+      <p class="text-center text-[10px] text-inklight mt-2 tracking-widest">— 此刻的画面 —</p>
+    </div>` : ''}
     <div class="h-4"></div>
     ${block('理解', q.understanding)}
     ${block('举例', q.example)}
@@ -896,7 +964,8 @@ function closeDetail() {
 document.getElementById('detail-del').onclick = function(e) {
   e.stopPropagation();
   if (!currentDetailId) return;
-  if (!confirm('确定删除这条文摘吗？')) return;
+  const cur = data.quotes.find(q => q.id === currentDetailId);
+  if (!confirm(cur && cur.channel === '随笔' ? '确定删除这篇随笔吗？' : '确定删除这条文摘吗？')) return;
   data.quotes = data.quotes.filter(q => q.id !== currentDetailId);
   saveData();
   closeDetail();
@@ -907,12 +976,14 @@ document.getElementById('detail-del').onclick = function(e) {
 // ==================== 添加 ====================
 let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
 let addChannel = '书本';     // 当前新增摘录的渠道
-function openAddModal() {
-  addChannel = '书本';
+function openAddModal(ch) {
+  // 智能默认：显式传入渠道用之；否则若正停留在某渠道列表（含随笔），默认选它；回到首页则默认书本
+  addChannel = ch || (CHANNELS.some(c => c.id === homeView) ? homeView : '书本');
   const sel = document.getElementById('add-book');
   sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
   renderAddChannel();  // 会正确设置选书/出处的显隐与布局
   ['add-original','add-source','add-understanding','add-example','add-note','add-related'].forEach(id => document.getElementById(id).value = '');
+  resetEssayPhoto();   // 随笔配图：清空上次的预览
   // 重置「相似佳句 · 自动搜罗」区
   pendingAutoSimilar = [];
   document.getElementById('auto-similar').innerHTML = '';
@@ -928,13 +999,27 @@ function renderAddChannel() {
       class="py-2.5 rounded-xl border-2 text-xs font-bold transition-all active:scale-95 ${addChannel === c.id ? 'text-white shadow' : 'border-line bg-paper text-inklight'}"
       style="${addChannel === c.id ? 'background:' + c.color + ';border-color:' + c.color : ''}">${c.icon} ${c.id}</button>`).join('');
   const isBook = addChannel === '书本';
-  // 书本渠道：选书 + 出处并排；非书本：只显示出处，占满整行
+  const isEssay = addChannel === '随笔';
+  // 书本渠道：选书 + 出处并排；随笔：两者都藏（只写正文）；其他渠道：只显示出处，占满整行
   const bookCell = document.querySelector('#add-book-row > div:nth-child(1)');
   const srcCell = document.getElementById('add-source-cell');
   document.getElementById('add-book-row').classList.toggle('grid-cols-2', isBook);
   document.getElementById('add-book-row').classList.toggle('grid-cols-1', !isBook);
   bookCell.style.display = isBook ? '' : 'none';
-  srcCell.style.display = '';
+  srcCell.style.display = isEssay ? 'none' : '';
+  // 摘录专属的「理解/举例/注意/相似句」区：随笔不需要
+  document.getElementById('add-extra').style.display = isEssay ? 'none' : '';
+  // 原文框：随笔给大框，摘录保持 3 行
+  const ori = document.getElementById('add-original');
+  ori.rows = isEssay ? 9 : 3;
+  ori.placeholder = isEssay ? '信笔由心……此刻所想、今日琐记，想到什么写什么' : '抄录打动你的句子…';
+  document.getElementById('add-original-label').innerHTML = isEssay
+    ? '正文 <span class="text-cinnabar">✦</span>'
+    : '原文 <span class="text-cinnabar">✦</span>';
+  document.getElementById('add-modal-title').textContent = isEssay ? '写一篇随笔' : '新摘一句';
+  document.getElementById('add-save-btn').textContent = isEssay ? '记 下 此 刻' : '收 入 书 囊';
+  // 随笔配图区：仅随笔显示
+  document.getElementById('add-photo-row').style.display = isEssay ? '' : 'none';
   document.getElementById('add-source-star').style.visibility = 'hidden';
   const src = document.getElementById('add-source');
   if (!isBook) src.placeholder = CHANNELS.find(c => c.id === addChannel).icon + ' 出处，如：电影《肖申克的救赎》';
@@ -942,6 +1027,55 @@ function renderAddChannel() {
 }
 function setAddChannel(id) { addChannel = id; renderAddChannel(); }
 function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+/* ==================== 随笔配图：选图 → 压缩 → 预览 ==================== */
+let pendingPhoto = null;    // 压缩后的 dataURL（待随随笔保存）
+function compressPhoto(file, cb) {
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    img.onload = () => {
+      // 最长边压到 720px（配图是点缀，够清晰也省流量/省存储）
+      const maxSide = 720;
+      let w = img.width, h = img.height;
+      if (w > maxSide || h > maxSide) {
+        const r = Math.min(maxSide / w, maxSide / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(cv.toDataURL('image/jpeg', 0.72));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function pickEssayPhoto(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)) { showToast('只能选图片哦'); input.value = ''; return; }
+  compressPhoto(f, (dataUrl) => {
+    pendingPhoto = dataUrl;
+    const pv = document.getElementById('add-photo-preview');
+    pv.classList.remove('hidden');
+    pv.innerHTML = `
+      <div class="relative inline-block">
+        <img src="${dataUrl}" class="w-24 h-24 object-cover rounded-xl border-2 border-line shadow-card">
+        <button type="button" onclick="removeEssayPhoto()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-ink text-white text-[11px] font-black flex items-center justify-center shadow active:scale-90 transition-transform">✕</button>
+      </div>`;
+    document.getElementById('btn-add-photo').classList.add('hidden');
+  });
+  input.value = '';
+}
+function removeEssayPhoto() {
+  pendingPhoto = null;
+  const pv = document.getElementById('add-photo-preview');
+  pv.classList.add('hidden');
+  pv.innerHTML = '';
+  document.getElementById('btn-add-photo').classList.remove('hidden');
+}
+function resetEssayPhoto() { removeEssayPhoto(); }
 
 // ==================== 新增书目 ====================
 const BOOK_COLORS = ['#8e3b2c', '#3a5666', '#72855f', '#9c7c35', '#5b4a6b', '#6b4a3a', '#4a6670', '#8a6d3b'];
@@ -1031,12 +1165,14 @@ function saveQuote() {
   }).map(s => ({ type: s.type, text: s.text, source: s.source, from: s.from }));
   const related = [...autoRelated, ...manualRelated];
   const isBook = addChannel === '书本';
+  const isEssay = addChannel === '随笔';
   data.quotes.unshift({
     id: 'q' + Date.now(),
     channel: addChannel,
     bookId: isBook ? document.getElementById('add-book').value : null,
     original,
-    source: document.getElementById('add-source').value.trim() || (isBook ? '未注明出处' : addChannel),
+    source: isEssay ? '' : (document.getElementById('add-source').value.trim() || (isBook ? '未注明出处' : addChannel)),
+    photo: isEssay ? (pendingPhoto || '') : '',
     understanding: document.getElementById('add-understanding').value.trim(),
     example: document.getElementById('add-example').value.trim(),
     note: document.getElementById('add-note').value.trim(),
@@ -1045,8 +1181,9 @@ function saveQuote() {
   });
   saveData();
   closeAddModal();
-  render();
-  showToast('已收入书囊 ✦');
+  if (isEssay) { homeView = '随笔'; filterBookId = 'all'; switchTab('quotes'); }
+  else render();
+  showToast(isEssay ? '已记下此刻 ✦' : '已收入书囊 ✦');
 }
 
 // ==================== 相似佳句 · 自动搜罗引擎 ====================
