@@ -474,7 +474,7 @@ const CHANNEL_COLOR = { '影视': '#5b4a6b', '评论': '#4a6670', '经济': '#8a
 /* 分类卡片底图：水墨国风插画（art/ 下 5 张，按渠道对应意境）*/
 function channelArt(id) {
   // ?v=N 版本参数：换图时把对应图 +1，绕过 GitHub Pages CDN 旧缓存，确保用户拿到新图
-  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=10', essay: 'art/essay.jpg?v=2' };
+  const art = { book: 'art/book.jpg?v=2', film: 'art/film.jpg?v=3', comment: 'art/comment.jpg?v=2', econ: 'art/econ.jpg?v=11', essay: 'art/essay.jpg?v=3' };
   return art[id] || '';
 }
 
@@ -575,8 +575,8 @@ function renderGallery() {
       </div>
       <button onclick="homeView='随笔';filterBookId='all';render()" class="relative w-full rounded-2xl overflow-hidden text-left active:scale-[0.99] transition-transform fade-in shadow-card" style="height:112px">
         ${eImg ? `<img src="${eImg}" alt="随笔" loading="lazy" class="absolute inset-0 w-full h-full object-cover">` : `<div class="absolute inset-0" style="background:#56694a"></div>`}
-        <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(24,18,14,0.02) 0%,rgba(24,18,14,0.14) 45%,rgba(24,18,14,0.62) 100%)"></div>
-        <div class="absolute inset-0" style="background:linear-gradient(90deg,rgba(24,18,14,0.34) 0%,rgba(24,18,14,0.10) 42%,transparent 68%)"></div>
+        <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(24,18,14,0) 0%,rgba(24,18,14,0.10) 45%,rgba(24,18,14,0.58) 100%)"></div>
+        <div class="absolute inset-0" style="background:linear-gradient(90deg,rgba(24,18,14,0.26) 0%,rgba(24,18,14,0.06) 40%,transparent 62%)"></div>
         <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg,transparent,rgba(255,246,236,0.5),transparent)"></div>
         <div class="absolute left-3.5 bottom-3 right-3.5 flex items-end justify-between">
           <div class="min-w-0">
