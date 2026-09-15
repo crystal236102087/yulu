@@ -165,11 +165,11 @@
       font-family: "Songti SC", "STSong", "SimSun", serif;
       letter-spacing: 0.3em; opacity: 0.9;
     }
-    .cv-bar {             /* 框内底部信息名牌：窄米色牌 + 细金边（参考图约6成宽居中） */
-      position: absolute; left: 20%; right: 20%; bottom: 3%;
-      height: 8.5cqw; max-height: 18px;
+    .cv-bar {             /* 框内底部信息名牌：窄米色牌 + 细金边（随封面缩放） */
+      position: absolute; left: 18%; right: 18%; bottom: 4.5%;
+      height: 8cqw; max-height: 16px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 6.5cqw; font-weight: 700; letter-spacing: 0.16em; text-indent: 0.16em;
+      font-size: 5.6cqw; font-weight: 700; letter-spacing: 0.1em; text-indent: 0.1em;
       border-radius: 2px; z-index: 5;
       border: 0.8px solid rgba(196,168,110,0.75);
       background: linear-gradient(180deg, #fdfbf3, #f4ecd6);
@@ -938,7 +938,7 @@ function bookCoverHTML(b, h, n) {
   // 字号以封面宽度百分比表示（cqw），随封面缩放
   // 横排需保证总宽度 = 字数 × 字号 ≤ 封面可用宽度（约 82cqw），故字号随字数递减
   const nameSize = vert
-    ? (nameLen <= 2 ? '27cqw' : nameLen <= 3 ? '22cqw' : '18cqw')
+    ? (nameLen <= 2 ? '26cqw' : nameLen <= 3 ? '21cqw' : '16.5cqw')
     : (nameLen <= 5 ? '14cqw' : nameLen <= 6 ? '12.5cqw' : nameLen <= 8 ? '10.5cqw' : '9cqw');
 
   // 底色
@@ -959,8 +959,8 @@ function bookCoverHTML(b, h, n) {
   // 图形层定位：一律避让书名区（竖排书名约占 top 22%~72%；横排书名约占 top 13%~30%）
   let artHTML = '';
   if (pal.art === 'field' || pal.art === 'city') {
-    // 田野/城市：贴底，参考图里占下半幅
-    artHTML = `<div class="cv-art" style="top:auto;bottom:0;height:38%;opacity:${b.finished ? 0.75 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
+    // 田野/城市：贴底但避开信息名牌区（bottom 12% 起）
+    artHTML = `<div class="cv-art" style="top:auto;bottom:10%;height:36%;opacity:${b.finished ? 0.75 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
   } else if (pal.art === 'taiji') {
     // 太极：竖排书名偏右，太极置于左侧偏下（参考图：道德经）
     artHTML = `<div class="cv-art" style="top:42%;height:34%;opacity:${b.finished ? 0.7 : 0.95}">${coverArt(pal.art, inkCol, false)}</div>`;
@@ -1047,9 +1047,9 @@ function shelfBookCell(b) {
     ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
     class="active:scale-95 transition-transform w-full">
     ${bookCoverHTML(b, 168, n)}
-    <div class="mt-1.5 text-center">
-      <p class="text-[10.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
-      <p class="text-[9.5px] text-cinnabar font-bold num-badge mt-px">${n} 摘</p>
+    <div class="mt-1 text-center">
+      <p class="text-[9.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
+      <p class="text-[8.5px] text-cinnabar font-bold num-badge mt-px">${n} 摘</p>
     </div>
   </button>`;
 }
@@ -1066,21 +1066,22 @@ function renderShelf() {
   const addBtn = `
     <button onclick="openBookModal()" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em] active:scale-[0.98] transition-transform">＋ 新 增 书 目</button>`;
 
-  /* 整面书架：所有书按序一排排（每排3本），复刻参考图的三层九本 */
+  /* 整面书架：所有书按序一排排（每排4本），书本更小巧紧凑 */
   if (shelfView === 'wall') {
     const books = data.books;
+    const PER = 4;   // 一排 4 本
     const rows = [];
-    for (let i = 0; i < books.length; i += 3) rows.push(books.slice(i, i + 3));
+    for (let i = 0; i < books.length; i += PER) rows.push(books.slice(i, i + PER));
     return `
       ${sw}
-      <div class="space-y-7">
+      <div class="space-y-6">
       ${rows.map(row => `
         <div class="relative fade-in">
-          <div class="grid grid-cols-3 gap-x-3 justify-items-center pb-1">
+          <div class="grid grid-cols-4 gap-x-2 justify-items-center pb-1">
             ${row.map(shelfBookCell).join('')}
           </div>
           <div class="shelf-board"></div>
-          <div class="h-4"></div>
+          <div class="h-3.5"></div>
         </div>`).join('')}
       </div>
       <p class="text-center text-[10px] text-inklight tracking-widest mt-1 mb-1">长按书脊可改分类</p>
@@ -1102,7 +1103,7 @@ function renderShelf() {
         </div>
         ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
         <div class="relative">
-          <div class="grid grid-cols-3 gap-x-3 gap-y-5 justify-items-center pb-1">
+          <div class="grid grid-cols-4 gap-x-2 gap-y-5 justify-items-center pb-1">
             ${books.map(shelfBookCell).join('')}
           </div>
           <div class="shelf-board"></div>
