@@ -631,7 +631,11 @@ function renderQuoteCard(q) {
   const isBook = q.channel === '书本';
   const book = data.books.find(b => b.id === q.bookId);
   const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
-  const tagLabel = isBook ? (book ? book.name : '未分类') : (q.channel || '佳句');
+  // 左上角标签：优先显示实际出处（如「道德经」），无出处时回落到书名/未分类
+  const srcTag = (q.source && q.source !== '未注明出处')
+    ? q.source.replace(/》\s*/g, ' ').replace(/[《》]/g, '').replace(/[—－-]{1,2}\s*/g, ' ').replace(/\s+/g, ' ').trim()
+    : '';
+  const tagLabel = isBook ? (srcTag || (book ? book.name : '未分类')) : (q.channel || '佳句');
   const relatedCount = (q.related || []).length;
   const meta = [];
   if (q.example) meta.push('举例');
@@ -645,9 +649,9 @@ function renderQuoteCard(q) {
         <div class="w-[7px] shrink-0" style="background:linear-gradient(180deg,${c},${c}aa)"></div>
         <div class="flex-1 px-5 py-4 min-w-0">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <span class="seal-tag" style="background:${c}">${tagLabel}</span>
-              <span class="text-[10px] text-inklight num-badge">${fmtDate(q.createdAt)}</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="seal-tag truncate max-w-[130px]" style="background:${c}">${tagLabel}</span>
+              <span class="text-[10px] text-inklight num-badge shrink-0">${fmtDate(q.createdAt)}</span>
             </div>
             ${relatedCount ? `<span class="ghost-seal" style="border-color:${c};color:${c}">佳句 ×${relatedCount}</span>` : ''}
           </div>
@@ -907,7 +911,10 @@ function openDetail(id) {
   const isEssay = q.channel === '随笔';
   const book = data.books.find(b => b.id === q.bookId);
   const c = isBook ? (book ? book.color : '#8e3b2c') : (CHANNEL_COLOR[q.channel] || '#8e3b2c');
-  const tagLabel = isBook ? (book ? book.name : '未分类') : (q.channel || '佳句');
+  const srcTag = (q.source && q.source !== '未注明出处')
+    ? q.source.replace(/》\s*/g, ' ').replace(/[《》]/g, '').replace(/[—－-]{1,2}\s*/g, ' ').replace(/\s+/g, ' ').trim()
+    : '';
+  const tagLabel = isBook ? (srcTag || (book ? book.name : '未分类')) : (q.channel || '佳句');
   const block = (label, text) => text ? `
     <div class="mb-5 relative pl-4">
       <div class="absolute left-0 top-1.5 bottom-1 w-[2px] rounded" style="background:linear-gradient(180deg,${c},${c}33)"></div>
@@ -916,8 +923,8 @@ function openDetail(id) {
     </div>` : '';
   document.getElementById('detail-body').innerHTML = `
     <div class="flex items-center gap-2 mb-4">
-      <span class="seal-tag" style="background:${c}">${tagLabel}</span>
-      <span class="text-[11px] text-inklight num-badge">${fmtDate(q.createdAt)} ${isEssay ? '随笔' : '摘录'}</span>
+      <span class="seal-tag truncate max-w-[150px]" style="background:${c}">${tagLabel}</span>
+      <span class="text-[11px] text-inklight num-badge shrink-0">${fmtDate(q.createdAt)} ${isEssay ? '随笔' : '摘录'}</span>
     </div>
     <div class="relative letter-card rounded-2xl p-6 my-2">
       <span class="corner-deco border-l-2 border-t-2" style="left:7px;top:7px"></span>
