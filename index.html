@@ -938,7 +938,7 @@ function bookCoverHTML(b, h, n) {
   // 字号以封面宽度百分比表示（cqw），随封面缩放
   // 横排需保证总宽度 = 字数 × 字号 ≤ 封面可用宽度（约 82cqw），故字号随字数递减
   const nameSize = vert
-    ? (nameLen <= 2 ? '30cqw' : nameLen <= 3 ? '25cqw' : '20.5cqw')
+    ? (nameLen <= 2 ? '27cqw' : nameLen <= 3 ? '22cqw' : '18cqw')
     : (nameLen <= 5 ? '14cqw' : nameLen <= 6 ? '12.5cqw' : nameLen <= 8 ? '10.5cqw' : '9cqw');
 
   // 底色
@@ -978,8 +978,8 @@ function bookCoverHTML(b, h, n) {
 
   // 竖排书名：道德经这类需偏右（因为左侧有太极）；其余居中
   const vertShift = pal.art === 'taiji' ? 'right:14%;left:auto;transform:none' : 'left:50%;transform:translateX(-50%)';
-  // 竖排书名起点：参考图约从封面 22% 处起
-  const vertTop = '21%';
+  // 竖排书名起点：参考图约从封面 20% 处起（字号越小越往上，整体视觉居中）
+  const vertTop = nameLen <= 2 ? '24%' : nameLen <= 3 ? '21%' : '20%';
   // 横排书名垂直位置：参考图约在封面 24%~30% 处（印章下方留白）
   const horizTop = (b.author && b.author !== '佚名') ? '23%' : '26%';
 
@@ -1029,37 +1029,81 @@ function shade(hex, amt) {
   return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
 }
 
+/* 书架视图：'wall'=整面书架（参考图：所有书一排排，每排3本）；'cats'=分类分组 */
+let shelfView = 'wall';
+try { shelfView = localStorage.getItem('yulu-shelf-view') || 'wall'; } catch (e) {}
+function setShelfView(v) {
+  shelfView = v;
+  try { localStorage.setItem('yulu-shelf-view', v); } catch (e) {}
+  render();
+}
+
+/* 单本书的书架格子（封面 + 书名 + 摘录数） */
+function shelfBookCell(b) {
+  const n = data.quotes.filter(q => q.bookId === b.id).length;
+  return `
+  <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
+    onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
+    ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
+    class="active:scale-95 transition-transform w-full">
+    ${bookCoverHTML(b, 168, n)}
+    <div class="mt-1.5 text-center">
+      <p class="text-[10.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
+      <p class="text-[9.5px] text-cinnabar font-bold num-badge mt-px">${n} 摘</p>
+    </div>
+  </button>`;
+}
+
 function renderShelf() {
+  /* 顶部视图切换：整架 / 分类 */
+  const sw = `
+    <div class="flex items-center justify-center gap-2.5 mb-5 fade-in">
+      <button onclick="setShelfView('wall')"
+        class="px-5 py-1.5 rounded-full text-[11px] font-bold tracking-[0.15em] transition-colors ${shelfView === 'wall' ? 'bg-ink text-paper' : 'border border-line text-inklight'}">整 架</button>
+      <button onclick="setShelfView('cats')"
+        class="px-5 py-1.5 rounded-full text-[11px] font-bold tracking-[0.15em] transition-colors ${shelfView === 'cats' ? 'bg-ink text-paper' : 'border border-line text-inklight'}">分 类</button>
+    </div>`;
+  const addBtn = `
+    <button onclick="openBookModal()" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em] active:scale-[0.98] transition-transform">＋ 新 增 书 目</button>`;
+
+  /* 整面书架：所有书按序一排排（每排3本），复刻参考图的三层九本 */
+  if (shelfView === 'wall') {
+    const books = data.books;
+    const rows = [];
+    for (let i = 0; i < books.length; i += 3) rows.push(books.slice(i, i + 3));
+    return `
+      ${sw}
+      <div class="space-y-7">
+      ${rows.map(row => `
+        <div class="relative fade-in">
+          <div class="grid grid-cols-3 gap-x-3 justify-items-center pb-1">
+            ${row.map(shelfBookCell).join('')}
+          </div>
+          <div class="shelf-board"></div>
+          <div class="h-4"></div>
+        </div>`).join('')}
+      </div>
+      <p class="text-center text-[10px] text-inklight tracking-widest mt-1 mb-1">长按书脊可改分类</p>
+      ${addBtn}`;
+  }
+
+  /* 分类分组视图：每类一层 */
   const cats = [...new Set(data.books.map(b => b.category))];
   return `
+    ${sw}
     <div class="space-y-8">
     ${cats.map(cat => {
       const books = data.books.filter(b => b.category === cat);
       return `
       <div class="fade-in">
-        <!-- 分类标题：左标题 + 右 N books（参考排版） -->
         <div class="flex items-end justify-between mb-4">
           <h3 class="font-black text-[16px] tracking-[0.15em]">${cat}</h3>
           <span class="text-[11px] text-inklight num-badge mb-0.5">${books.length} books</span>
         </div>
         ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
-        <!-- 一层书架：一排固定 3 本（参考图密度），封面自适应 -->
         <div class="relative">
           <div class="grid grid-cols-3 gap-x-3 gap-y-5 justify-items-center pb-1">
-            ${books.map(b => {
-              const n = data.quotes.filter(q => q.bookId === b.id).length;
-              return `
-              <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
-                onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
-                ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
-                class="active:scale-95 transition-transform w-full">
-                ${bookCoverHTML(b, 168, n)}
-                <div class="mt-1.5 text-center">
-                  <p class="text-[10.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
-                  <p class="text-[9.5px] text-cinnabar font-bold num-badge mt-px">${n} 摘</p>
-                </div>
-              </button>`;
-            }).join('')}
+            ${books.map(shelfBookCell).join('')}
           </div>
           <div class="shelf-board"></div>
           <div class="h-4"></div>
@@ -1067,8 +1111,7 @@ function renderShelf() {
       </div>`;
     }).join('')}
     </div>
-    <button onclick="openBookModal()" class="w-full mt-2 mb-2 py-4 rounded-2xl border-2 border-dashed border-line text-inklight text-sm font-bold tracking-[0.3em] active:scale-[0.98] transition-transform">＋ 新 增 书 目</button>
-  `;
+    ${addBtn}`;
 }
 
 // ---------- 格言页 ----------
@@ -1525,9 +1568,9 @@ function saveBook() {
     const b = data.books.find(x => x.id === editingBookId);
     if (!b) { closeBookModal(); return; }
     // 读完日期：勾选时补上，取消勾选时清空
-    Object.assign(b, fields, { finishDate: fields.finished ? (b.finishDate || new Date().toISOString().slice(0, 10)) : '' });
+    Object.assign(b, fields, { updatedAt: Date.now(), finishDate: fields.finished ? (b.finishDate || new Date().toISOString().slice(0, 10)) : '' });
   } else {
-    data.books.push({ id: 'b' + Date.now(), ...fields, finishDate: fields.finished ? new Date().toISOString().slice(0, 10) : '' });
+    data.books.push({ id: 'b' + Date.now(), ...fields, updatedAt: Date.now(), finishDate: fields.finished ? new Date().toISOString().slice(0, 10) : '' });
   }
   saveData();
   closeBookModal();
@@ -2132,20 +2175,22 @@ async function syncPush() {
   setSync({ token: s.token, code: s.code, sha, lastSyncAt: updatedAt });
 }
 
-/* 按 id 逐项合并两组数据：两边都保留，同 id 时本地优先（本地是刚编辑过的）
-   目的：避免「云端整份覆盖本地」把新加的书吞掉 */
+/* 按 id 逐项合并两组数据：两边都保留，同 id 时取 updatedAt 新的一方
+   （本地刚编辑的书带新时间戳会覆盖云端；云端修正也会正确下发） */
 function mergeById(localArr, remoteArr) {
-  const out = [];
-  const seen = new Set();
+  const byId = new Map();
   (Array.isArray(localArr) ? localArr : []).forEach(x => {
-    if (!x || !x.id || seen.has(x.id)) return;
-    seen.add(x.id); out.push(x);
+    if (!x || !x.id || byId.has(x.id)) return;
+    byId.set(x.id, x);
   });
   (Array.isArray(remoteArr) ? remoteArr : []).forEach(x => {
-    if (!x || !x.id || seen.has(x.id)) return;
-    seen.add(x.id); out.push(x);
+    if (!x || !x.id || byId.has(x.id)) return;
+    const old = byId.get(x.id);
+    if (!old) { byId.set(x.id, x); return; }
+    const lt = old.updatedAt || 0, rt = x.updatedAt || 0;
+    if (rt > lt) byId.set(x.id, x);   // 云端更新 → 采用云端
   });
-  return out;
+  return [...byId.values()];
 }
 function mergeData(localD, remoteD) {
   const l = localD || {}, r = remoteD || {};
