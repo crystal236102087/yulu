@@ -321,14 +321,14 @@
       </div>
     </div>
 
-    <!-- 新增书目弹窗 -->
+    <!-- 新增 / 编辑书目弹窗 -->
     <div id="book-modal" class="hidden absolute inset-0 z-50">
       <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeBookModal()"></div>
       <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[90%] overflow-y-auto slide-up border-t-2 border-cinnabar/30">
         <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-md bg-indigoblue flex items-center justify-center"><span class="text-white brand-title text-lg leading-none">书</span></div>
-            <h3 class="font-black text-lg tracking-wide">新增书目</h3>
+            <h3 id="book-modal-title" class="font-black text-lg tracking-wide">新增书目</h3>
           </div>
           <button onclick="closeBookModal()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
         </div>
@@ -348,6 +348,7 @@
               <datalist id="book-cat-list"></datalist>
             </div>
           </div>
+          <div id="book-cat-quick" class="flex gap-2 flex-wrap -mt-2"></div>
           <div>
             <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">书脊颜色</label>
             <div id="book-color-pick" class="flex gap-2.5 flex-wrap"></div>
@@ -357,7 +358,9 @@
             <span class="text-sm font-bold">已读完</span>
             <span class="text-[10px] text-inklight">（没勾的话书脊上会标「在读」）</span>
           </label>
-          <button onclick="saveBook()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#3a5666] to-[#2a3f4c] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-card mb-8">上 架</button>
+          <button id="book-save-btn" onclick="saveBook()" class="w-full py-4 rounded-2xl bg-gradient-to-b from-[#3a5666] to-[#2a3f4c] text-white font-black tracking-[0.5em] text-base active:scale-[0.98] transition-transform shadow-card">上 架</button>
+          <button id="book-del-btn" onclick="deleteBook()" class="hidden w-full py-3 rounded-2xl text-cinnabar border-2 border-cinnabar/25 text-sm font-bold tracking-[0.2em] active:scale-[0.98] transition-transform mb-8">移 除 本 书</button>
+          <div id="book-save-pad" class="h-8"></div>
         </div>
       </div>
     </div>
@@ -724,6 +727,7 @@ function renderShelf() {
           <h3 class="font-black text-[16px] tracking-[0.15em]">${cat}</h3>
           <span class="text-[11px] text-inklight num-badge mb-0.5">${books.length} books</span>
         </div>
+        ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
         <!-- 一层书架：封面并排 -->
         <div class="relative px-1">
           <div class="flex items-end justify-start gap-4 flex-wrap min-h-[190px] pb-1">
@@ -1133,26 +1137,43 @@ function resetEssayPhoto() { removeEssayPhoto(); }
 const BOOK_COLORS = ['#8e3b2c', '#3a5666', '#72855f', '#9c7c35', '#5b4a6b', '#6b4a3a', '#4a6670', '#8a6d3b'];
 let pickedBookColor = null;
 
-function openBookModal() {
-  document.getElementById('book-name').value = '';
-  document.getElementById('book-author').value = '';
-  document.getElementById('book-category').value = '';
-  document.getElementById('book-finished').checked = false;
-  // 分类候选 = 现有书目的分类
-  const cats = [...new Set(data.books.map(b => b.category))];
+let editingBookId = null;   // 正在编辑的书 id（null = 新增）
+
+function openBookModal(id) {
+  editingBookId = id || null;
+  const eb = editingBookId ? data.books.find(b => b.id === editingBookId) : null;
+  document.getElementById('book-name').value = eb ? eb.name : '';
+  document.getElementById('book-author').value = eb ? (eb.author === '佚名' ? '' : eb.author) : '';
+  document.getElementById('book-category').value = eb ? eb.category : '';
+  document.getElementById('book-finished').checked = eb ? !!eb.finished : false;
+  // 分类候选 = 现有书目的分类（并保证「待归类」可选）
+  const cats = [...new Set([...data.books.map(b => b.category), '待归类', '国学经典', '现当代文学', '经济学', '现代散文'])].filter(Boolean);
   document.getElementById('book-cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
-  // 颜色：默认选「书架上用得最少」的颜色，让书脊更错落
+  // 常用分类快捷按钮：一点就把分类填上，省得手打
+  document.getElementById('book-cat-quick').innerHTML = cats.map(c => `
+    <button type="button" onclick="document.getElementById('book-category').value='${c}'"
+      class="px-3 py-1.5 rounded-full text-[11px] font-bold border border-line bg-paper text-inklight active:scale-95 transition-transform">${c}</button>`).join('');
+  // 颜色：编辑时用本书原色；新增时选「书架上用得最少」的颜色，让书脊更错落
   const use = {};
   data.books.forEach(b => { use[b.color] = (use[b.color] || 0) + 1; });
-  const sorted = [...BOOK_COLORS].sort((a, b) => (use[a] || 0) - (use[b] || 0));
-  pickedBookColor = sorted[0];
+  if (eb) pickedBookColor = eb.color;
+  else pickedBookColor = [...BOOK_COLORS].sort((a, b) => (use[a] || 0) - (use[b] || 0))[0];
   document.getElementById('book-color-pick').innerHTML = BOOK_COLORS.map(c => `
     <button type="button" onclick="pickBookColor('${c}')" data-color="${c}"
       class="w-9 h-9 rounded-lg border-2 active:scale-90 transition-transform"
       style="background:${c};border-color:${c === pickedBookColor ? '#2a2622' : 'transparent'}"></button>`).join('');
+  // 编辑 / 新增 两种模式的文案与按钮
+  document.getElementById('book-modal-title').textContent = eb ? '编辑书目' : '新增书目';
+  document.getElementById('book-save-btn').textContent = eb ? '保 存 修 改' : '上 架';
+  const delBtn = document.getElementById('book-del-btn');
+  delBtn.classList.toggle('hidden', !eb);
+  document.getElementById('book-save-pad').className = eb ? 'h-4' : 'h-8';
   document.getElementById('book-modal').classList.remove('hidden');
 }
-function closeBookModal() { document.getElementById('book-modal').classList.add('hidden'); }
+function closeBookModal() {
+  document.getElementById('book-modal').classList.add('hidden');
+  editingBookId = null;
+}
 function pickBookColor(c) {
   pickedBookColor = c;
   document.querySelectorAll('#book-color-pick button').forEach(b => {
@@ -1163,38 +1184,51 @@ function saveBook() {
   const name = document.getElementById('book-name').value.trim();
   if (!name) { showToast('书名还没写'); return; }
   const bare = (s) => s.replace(/[《》\s]/g, '');
-  if (data.books.some(b => bare(b.name) === bare(name))) { showToast('书架上已经有这本书了'); return; }
-  data.books.push({
-    id: 'b' + Date.now(),
+  const isEdit = !!editingBookId;
+  if (data.books.some(b => bare(b.name) === bare(name) && b.id !== editingBookId)) { showToast('书架上已经有这本书了'); return; }
+  const fields = {
     name,
     author: document.getElementById('book-author').value.trim() || '佚名',
-    category: document.getElementById('book-category').value.trim() || '未分类',
+    category: document.getElementById('book-category').value.trim() || '待归类',
     color: pickedBookColor || BOOK_COLORS[data.books.length % BOOK_COLORS.length],
     finished: document.getElementById('book-finished').checked,
-    finishDate: document.getElementById('book-finished').checked ? new Date().toISOString().slice(0, 10) : '',
-  });
+  };
+  if (isEdit) {
+    const b = data.books.find(x => x.id === editingBookId);
+    if (!b) { closeBookModal(); return; }
+    // 读完日期：勾选时补上，取消勾选时清空
+    Object.assign(b, fields, { finishDate: fields.finished ? (b.finishDate || new Date().toISOString().slice(0, 10)) : '' });
+  } else {
+    data.books.push({ id: 'b' + Date.now(), ...fields, finishDate: fields.finished ? new Date().toISOString().slice(0, 10) : '' });
+  }
   saveData();
   closeBookModal();
   render();
-  showToast('已上架「' + name + '」✦');
+  showToast(isEdit ? '已保存修改 ✦' : '已上架「' + name + '」✦');
+}
+/* 从书架移除本书（摘录保留，只是不再归到这本书名下） */
+function deleteBook() {
+  const b = data.books.find(x => x.id === editingBookId);
+  if (!b) return;
+  const n = data.quotes.filter(q => q.bookId === b.id).length;
+  if (!confirm('把「' + b.name + '」从书架上移除？\n' + (n ? '书里的 ' + n + ' 条摘录会保留，只是不再归到这本书名下。' : ''))) return;
+  data.books = data.books.filter(x => x.id !== b.id);
+  if (filterBookId === b.id) filterBookId = 'all';
+  const name = b.name;
+  closeBookModal();
+  saveData();
+  render();
+  showToast('已移除「' + name + '」');
 }
 
-/* 长按书脊 = 移除书目（摘录保留，只是不再归入该书） */
+/* 长按书脊 = 打开书目编辑弹窗（可改书名/作者/分类/颜色，也可移除） */
 let bookPressTimer = null, bookPressSuppressClick = false;
 function bookPressStart(id) {
   bookPressSuppressClick = false;
-  const book = data.books.find(b => b.id === id);
-  if (!book) return;
+  if (!data.books.find(b => b.id === id)) return;
   bookPressTimer = setTimeout(() => {
     bookPressSuppressClick = true;
-    const n = data.quotes.filter(q => q.bookId === id).length;
-    if (confirm('把「' + book.name + '」从书架上移除？\n' + (n ? '书里的 ' + n + ' 条摘录会保留，只是不再归到这本书名下。' : ''))) {
-      data.books = data.books.filter(b => b.id !== id);
-      if (filterBookId === id) filterBookId = 'all';
-      saveData();
-      render();
-      showToast('已移除「' + book.name + '」');
-    }
+    openBookModal(id);
   }, 600);
 }
 function bookPressEnd() { clearTimeout(bookPressTimer); }
