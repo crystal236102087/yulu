@@ -1,5 +1,5 @@
 /* 余录 · Service Worker —— 离线缓存 + PWA 安装支持 */
-const CACHE = 'yulu-v40';
+const CACHE = 'yulu-v41';
 const APP_SHELL = [
   './',
   './index.html',
