@@ -116,6 +116,49 @@
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; padding: 8px 6px; text-align: center;
     }
+    /* ===== 统一封面设计系统（程序化绘制）=====
+       结构：纸张底色 + 噪点 + 双线内框 + 右上印章 + 顶部标题区 + 辅助图形 + 底部分类信息栏 */
+    .cv-noise {           /* 纸张纤维噪点：用极细的斜纹模拟纸感 */
+      background-image:
+        repeating-linear-gradient(43deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(-47deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 4px),
+        radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%);
+    }
+    .cv-frame {           /* 内描边：留出上下天地 */
+      position: absolute; left: 8px; right: 8px; top: 9px; bottom: 44px;
+      border: 1px solid rgba(255,255,255,0.36);
+      border-radius: 1px;
+      pointer-events: none;
+    }
+    .cv-frame::before {   /* 双线描边：内侧再一道细线 */
+      content: ''; position: absolute; inset: 2.5px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 1px;
+    }
+    .cv-seal {            /* 右上角方形印章（取书名首字） */
+      position: absolute; right: 14px; top: 15px; width: 21px; height: 21px;
+      border: 1.5px solid rgba(255,255,255,0.55); border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.72);
+      line-height: 1; letter-spacing: 0;
+      background: rgba(255,255,255,0.06);
+    }
+    .cv-title {           /* 书名：衬线大字 */
+      font-weight: 900; letter-spacing: 0.14em; line-height: 1.2;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      text-indent: 0.14em;
+    }
+    .cv-author { font-size: 9.5px; letter-spacing: 0.18em; opacity: 0.78; margin-top: 6px; text-indent: 0.18em; }
+    .cv-motif {           /* 辅助图形层：铺在文字下方 */
+      position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none; opacity: 0.6;
+    }
+    .cv-bar {             /* 底部信息栏：烫金底 + 分类名（系列统一标识） */
+      position: absolute; left: 8px; right: 8px; bottom: 9px; height: 25px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+      border-radius: 1px; text-indent: 0.2em;
+    }
     /* 木质书架层板 */
     .shelf-board {
       height: 10px;
@@ -714,6 +757,138 @@ function renderEssayCard(q) {
 }
 
 // ---------- 书架页：仿真实书架（分类标题 + N books，封面并排） ----------
+/* ==================== 书籍封面设计系统 ====================
+   统一结构：纸张底色+噪点 → 双线内框 → 右上印章 → 书名(衬线) → 作者 → 辅助图形 → 底部信息栏
+   只通过「主色」与「分类对应的辅助图形」区分，尺寸与版式保持一致。 */
+const COVER_PALETTE = {
+  // 分类 → 主色（与 BOOK_COLORS 同源，保证「手动配色」与「分类默认」观感一致）
+  '国学经典':   { bg: '#8e3b2c', motif: 'seal-cloud',  ink: '#fff4e6' },  // 朱红古籍
+  '道家经典':   { bg: '#9c7c35', motif: 'taiji',       ink: '#fffaf0' },  // 褐白纸感
+  '道家':       { bg: '#9c7c35', motif: 'taiji',       ink: '#fffaf0' },
+  '现当代文学': { bg: '#72855f', motif: 'field',       ink: '#fdfcef' },  // 橄榄绿
+  '现代散文':   { bg: '#8a6d3b', motif: 'bamboo',      ink: '#fff8ea' },
+  '经济学':     { bg: '#4a6670', motif: 'grid',        ink: '#f2f8fa' },
+  '儒门经典':   { bg: '#3a5666', motif: 'bamboo',      ink: '#f2f8fa' },
+  '待归类':     { bg: '#6b6a72', motif: 'cloud',       ink: '#f6f6f4' },
+};
+const MOTIF_DEFAULT = { bg: '#6b6a72', motif: 'cloud', ink: '#f6f6f4' };
+
+/* 辅助图形：分类 → 一套矢量线稿（保持同一视觉语言：细线、半透明、居中偏下） */
+function coverMotif(kind, ink) {
+  const s = `stroke="${ink}" stroke-width="1.1" fill="none" opacity="0.5" stroke-linecap="round"`;
+  const f = `fill="${ink}" opacity="0.5"`;
+  switch (kind) {
+    case 'bamboo':  // 竹影：两竿细竹 + 竹叶（自右下斜出，避免出现长直线）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s}>
+          <path d="M72 44 C70 62 69 84 71 112"/>
+          <path d="M84 56 C82 72 81 90 83 110"/>
+          <path d="M68 62 C60 58 55 59 50 63"/>
+          <path d="M60 76 C52 72 47 73 43 77"/>
+          <path d="M56 92 C48 88 43 89 39 93"/>
+          <path d="M70 72 C78 68 83 69 87 73"/>
+          <path d="M65 88 C73 84 78 85 82 89"/>
+          <path d="M62 104 C70 100 75 101 79 105"/>
+        </g>
+        <g ${f}><ellipse cx="22" cy="128" rx="24" ry="8"/></g>
+      </svg>`;
+    case 'taiji':   // 太极：圆内阴阳（用描边+两个小圆表达）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s}>
+          <circle cx="50" cy="72" r="30"/>
+          <path d="M50 42 A15 15 0 0 0 50 72 A15 15 0 0 1 50 102 A30 30 0 0 1 50 42"/>
+          <circle cx="50" cy="57" r="3.4"/><circle cx="50" cy="87" r="3.4"/>
+          <path d="M14 116 H86" opacity="0.35"/>
+        </g>
+      </svg>`;
+    case 'field':   // 田野远山：起伏线 + 两个人影 + 田垄
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s}>
+          <path d="M6 108 C24 96 38 100 50 104 C64 108 78 100 94 92"/>
+          <path d="M10 122 C30 114 52 118 90 110"/>
+          <path d="M16 134 C36 128 60 132 86 124"/>
+        </g>
+        <g ${f}>
+          <ellipse cx="60" cy="101" rx="2.1" ry="4.4"/><ellipse cx="65" cy="100.5" rx="2.1" ry="4.6"/>
+        </g>
+      </svg>`;
+    case 'seal-cloud': // 云纹：如意云头（古籍感）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s}>
+          <path d="M22 118 c0-6 5-9 9-8 c0-7 7-11 13-8 c3-6 11-6 14 0 c6-3 13 1 13 8 c5-1 9 3 9 8"/>
+          <path d="M18 128 h64" opacity="0.4"/>
+          <path d="M30 106 c0-4 3-6 6-5 c0-5 5-7 8-5" opacity="0.55"/>
+        </g>
+      </svg>`;
+    case 'grid':    // 经济：几何网格 + 上升折线
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s} opacity="0.36">
+          <path d="M20 60 H80"/><path d="M20 78 H80"/><path d="M20 96 H80"/>
+          <path d="M32 50 V106"/><path d="M50 50 V106"/><path d="M68 50 V106"/>
+        </g>
+        <g ${s}>
+          <path d="M22 116 L40 98 L56 106 L78 78"/>
+          <circle cx="78" cy="78" r="2.6"/>
+        </g>
+      </svg>`;
+    case 'cloud':   // 默认：流云
+    default:
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+        <g ${s}>
+          <path d="M20 112 c0-7 6-10 11-9 c1-8 8-12 15-8 c4-6 13-5 15 2 c7-2 12 3 11 9"/>
+          <path d="M24 124 c0-6 5-9 10-8 c1-7 7-10 13-7 c4-5 12-4 14 3"/>
+          <path d="M30 88 c0-5 4-8 9-7 c1-6 6-9 11-6" opacity="0.5"/>
+        </g>
+      </svg>`;
+  }
+}
+
+/* 生成一本书的封面 HTML */
+function bookCoverHTML(b, h, n) {
+  const pal = COVER_PALETTE[b.category] || MOTIF_DEFAULT;
+  const bg = b.color || pal.bg;
+  // 印章内容：书名首字
+  const sealChar = (b.name || '书').slice(0, 1);
+  // 分类文字（底部信息栏）：优先显示分类，没有就显示「余录」
+  const barText = b.category && b.category !== '待归类' ? b.category : '余　录';
+  // 书名过长时缩字号，保证两行内可容纳
+  const nameLen = [...(b.name || '')].length;
+  const titleSize = nameLen <= 2 ? 21 : nameLen <= 4 ? 17.5 : nameLen <= 6 ? 14.5 : 12.5;
+  // 书名换行：≤4 字一行，5-8 字尽量两行均分
+  const chars = [...(b.name || '')];
+  let lines;
+  if (nameLen <= 4) lines = [b.name];
+  else if (nameLen <= 8) {
+    const half = Math.ceil(nameLen / 2);
+    lines = [chars.slice(0, half).join(''), chars.slice(half).join('')];
+  } else {
+    lines = [chars.slice(0, 5).join(''), chars.slice(5, 10).join(''), chars.slice(10).join('')].filter(Boolean);
+  }
+  return `
+    <div class="book-cover mx-auto relative cv-noise" style="background:linear-gradient(163deg,${bg} 0%,${bg} 58%,${shade(bg, -14)} 100%);height:${h}px">
+      <div class="cv-motif" style="opacity:${b.finished ? 0.34 : 0.6}">${coverMotif(pal.motif, pal.ink)}</div>
+      <div class="cv-frame"></div>
+      <div class="cv-seal">${sealChar}</div>
+      <div class="absolute inset-x-0 top-[38px] px-3 text-center" style="color:${pal.ink}">
+        <p class="cv-title" style="font-size:${titleSize}px">${lines.join('<br>')}</p>
+        ${b.author && b.author !== '佚名' ? `<p class="cv-author">${b.author}</p>` : ''}
+      </div>
+      <div class="cv-bar" style="background:linear-gradient(180deg,#e9dcb0,#d9c68c);color:#5b4a22;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.45),0 1px 2px rgba(0,0,0,0.12)">${barText}</div>
+      <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.16)"></span>
+      ${b.finished
+        ? `<span class="absolute top-2 left-2 text-[8px] bg-paper/90 text-ink px-1.5 py-0.5 rounded-sm font-bold tracking-[0.15em] z-10 shadow-sm">读 完</span>`
+        : `<span class="absolute bottom-[42px] left-1/2 -translate-x-1/2 text-[8px] bg-ink/40 text-paper px-2 py-0.5 rounded-full font-bold tracking-widest z-10 whitespace-nowrap">在读</span>`}
+    </div>`;
+}
+/* 颜色加深/变浅（用于封面底部渐变收口） */
+function shade(hex, amt) {
+  const c = hex.replace('#', '');
+  const num = parseInt(c.length === 3 ? c.split('').map(x => x + x).join('') : c, 16);
+  let r = (num >> 16) + amt, g = ((num >> 8) & 255) + amt, bl = (num & 255) + amt;
+  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); bl = Math.max(0, Math.min(255, bl));
+  return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
+}
+
 function renderShelf() {
   const cats = [...new Set(data.books.map(b => b.category))];
   return `
@@ -739,16 +914,7 @@ function renderShelf() {
                 onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
                 ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
                 class="active:scale-95 transition-transform" style="width:98px">
-                <div class="book-cover mx-auto relative" style="background:linear-gradient(165deg,${b.color},${b.color}d0);height:${h}px">
-                  <div class="cover-inner">
-                    <p class="text-[#fff6ec] font-black text-[14px] leading-snug tracking-[0.06em]" style="text-shadow:0 1px 2px rgba(0,0,0,0.35)">${b.name}</p>
-                    ${b.author ? `<p class="text-[#fff6ec]/80 text-[10px] mt-1.5 tracking-widest" style="text-shadow:0 1px 2px rgba(0,0,0,0.3)">${b.author}</p>` : ''}
-                  </div>
-                  <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.18)"></span>
-                  ${b.finished
-                    ? `<span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gold border-2 border-paper flex items-center justify-center text-[9px] text-white font-black shadow">✓</span>`
-                    : `<span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] bg-ink/50 text-paper px-2 py-0.5 rounded-full font-bold tracking-widest">在读</span>`}
-                </div>
+                ${bookCoverHTML(b, h, n)}
                 <div class="mt-2 text-center">
                   <p class="text-[11px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
                   <p class="text-[10px] text-cinnabar font-bold num-badge mt-0.5">${n} 摘</p>
@@ -1149,9 +1315,9 @@ function openBookModal(id) {
   // 分类候选 = 现有书目的分类（并保证「待归类」可选）
   const cats = [...new Set([...data.books.map(b => b.category), '待归类', '国学经典', '现当代文学', '经济学', '现代散文'])].filter(Boolean);
   document.getElementById('book-cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
-  // 常用分类快捷按钮：一点就把分类填上，省得手打
+  // 常用分类快捷按钮：一点就把分类填上，顺带套用该分类的系列封面主色
   document.getElementById('book-cat-quick').innerHTML = cats.map(c => `
-    <button type="button" onclick="document.getElementById('book-category').value='${c}'"
+    <button type="button" onclick="quickPickCat('${c}')"
       class="px-3 py-1.5 rounded-full text-[11px] font-bold border border-line bg-paper text-inklight active:scale-95 transition-transform">${c}</button>`).join('');
   // 颜色：编辑时用本书原色；新增时选「书架上用得最少」的颜色，让书脊更错落
   const use = {};
@@ -1179,6 +1345,12 @@ function pickBookColor(c) {
   document.querySelectorAll('#book-color-pick button').forEach(b => {
     b.style.borderColor = (b.dataset.color === c) ? '#2a2622' : 'transparent';
   });
+}
+/* 快捷选分类：填分类的同时自动套用该分类的系列主色（仍可再手动改色） */
+function quickPickCat(c) {
+  document.getElementById('book-category').value = c;
+  const pal = COVER_PALETTE[c];
+  if (pal && BOOK_COLORS.includes(pal.bg)) pickBookColor(pal.bg);
 }
 function saveBook() {
   const name = document.getElementById('book-name').value.trim();
