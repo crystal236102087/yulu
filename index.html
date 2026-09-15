@@ -248,16 +248,13 @@
             <label class="block text-[11px] font-bold text-inklight mb-2 tracking-[0.2em]">记录类型</label>
             <div id="add-channel" class="grid grid-cols-5 gap-1.5"></div>
           </div>
-          <div id="add-book-row" class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">选书</label>
-              <select id="add-book" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm font-bold"></select>
-            </div>
+          <div id="add-book-row" class="grid grid-cols-1 gap-3">
             <div id="add-source-cell">
               <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">出处 <span id="add-source-star" class="text-cinnabar">✦</span></label>
               <input id="add-source" type="text" placeholder="《论语·阳货》" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-sm">
             </div>
           </div>
+          <select id="add-book" class="hidden"></select>
           <div>
             <label id="add-original-label" class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">原文 <span class="text-cinnabar">✦</span></label>
             <textarea id="add-original" rows="3" placeholder="抄录打动你的句子…" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] leading-relaxed resize-none"></textarea>
@@ -987,9 +984,7 @@ function openAddModal(ch) {
   editingId = null;    // 明确进入「新增」模式
   // 智能默认：显式传入渠道用之；否则若正停留在某渠道列表（含随笔），默认选它；回到首页则默认书本
   addChannel = ch || (CHANNELS.some(c => c.id === homeView) ? homeView : '书本');
-  const sel = document.getElementById('add-book');
-  sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
-  renderAddChannel();  // 会正确设置选书/出处的显隐与布局
+  renderAddChannel();  // 会正确设置出处/配图等显隐与布局
   ['add-original','add-source','add-understanding','add-example','add-note','add-related'].forEach(id => document.getElementById(id).value = '');
   resetEssayPhoto();   // 随笔配图：清空上次的预览
   // 重置「相似佳句 · 自动搜罗」区
@@ -1007,12 +1002,15 @@ function openEditModal(id) {
   if (!q) return;
   editingId = id;
   addChannel = q.channel || '书本';
-  const sel = document.getElementById('add-book');
-  sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
-  if (q.bookId) sel.value = q.bookId;
   renderAddChannel();
   document.getElementById('add-original').value = q.original || '';
-  document.getElementById('add-source').value = (q.source && q.source !== '未注明出处') ? q.source : '';
+  // 出处：旧数据里书本可能只存了 bookId，这里反查书名补上
+  let srcVal = (q.source && q.source !== '未注明出处') ? q.source : '';
+  if (q.channel === '书本' && !srcVal && q.bookId) {
+    const bk = data.books.find(b => b.id === q.bookId);
+    if (bk) srcVal = '《' + bk.name + '》';
+  }
+  document.getElementById('add-source').value = srcVal;
   document.getElementById('add-understanding').value = q.understanding || '';
   document.getElementById('add-example').value = q.example || '';
   document.getElementById('add-note').value = q.note || '';
@@ -1039,14 +1037,13 @@ function renderAddChannel() {
       style="${addChannel === c.id ? 'background:' + c.color + ';border-color:' + c.color : ''}">${c.icon} ${c.id}</button>`).join('');
   const isBook = addChannel === '书本';
   const isEssay = addChannel === '随笔';
-  // 书本渠道：选书 + 出处并排；随笔：两者都藏（只写正文）；其他渠道：只显示出处，占满整行
-  const bookCell = document.querySelector('#add-book-row > div:nth-child(1)');
-  const srcCell = document.getElementById('add-source-cell');
-  document.getElementById('add-book-row').classList.toggle('grid-cols-2', isBook);
-  document.getElementById('add-book-row').classList.toggle('grid-cols-1', !isBook);
-  bookCell.style.display = isBook ? '' : 'none';
-  srcCell.style.display = isEssay ? 'none' : '';
-  // 摘录专属的「理解/举例/注意/相似句」区：随笔不需要
+  // 只填出处：随笔时藏起来（随笔正文自带，不必标出处），其余渠道显示、占满整行
+  document.getElementById('add-source-cell').style.display = isEssay ? 'none' : '';
+  // 出处占位提示：按渠道给例子
+  const src = document.getElementById('add-source');
+  const srcLabel = document.querySelector('#add-source-cell label');
+  if (isBook) { src.placeholder = '《论语·阳货》'; srcLabel.childNodes[0].nodeValue = '书名 / 出处 '; }
+  else { src.placeholder = CHANNELS.find(c => c.id === addChannel).icon + ' 出处，如：电影《肖申克的救赎》'; srcLabel.childNodes[0].nodeValue = '出处 '; }
   document.getElementById('add-extra').style.display = isEssay ? 'none' : '';
   // 原文框：随笔给大框，摘录保持 3 行
   const ori = document.getElementById('add-original');
@@ -1060,9 +1057,6 @@ function renderAddChannel() {
   // 随笔配图区：仅随笔显示
   document.getElementById('add-photo-row').style.display = isEssay ? '' : 'none';
   document.getElementById('add-source-star').style.visibility = 'hidden';
-  const src = document.getElementById('add-source');
-  if (!isBook) src.placeholder = CHANNELS.find(c => c.id === addChannel).icon + ' 出处，如：电影《肖申克的救赎》';
-  else src.placeholder = '《论语·阳货》';
 }
 function setAddChannel(id) { addChannel = id; renderAddChannel(); }
 function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); editingId = null; }
@@ -1214,11 +1208,19 @@ function saveQuote() {
   // 编辑时：AI/精选搜罗的相似句原样保留，只重算手动部分
   const keepAuto = isEdit ? (target.related || []).filter(r => r.from === 'ai' || r.from === 'lib') : [];
   const finalRelated = isEdit ? [...keepAuto, ...related] : related;
+  // bookId 改为按「出处」书名去书架上匹配（书本渠道才挂靠），找不到则留空
+  let matchedBookId = null;
+  const srcText = isEssay ? '' : document.getElementById('add-source').value.trim();
+  if (isBook && srcText) {
+    const bare = srcText.replace(/^《|》$/g, '').trim();
+    const hit = data.books.find(b => b.name === bare || b.name === srcText || bare.startsWith(b.name) || b.name.startsWith(bare));
+    if (hit) matchedBookId = hit.id;
+  }
   const fields = {
     channel: addChannel,
-    bookId: isBook ? document.getElementById('add-book').value : null,
+    bookId: matchedBookId,
     original,
-    source: isEssay ? '' : (document.getElementById('add-source').value.trim() || (isBook ? '未注明出处' : addChannel)),
+    source: isEssay ? '' : (srcText || (isBook ? '未注明出处' : addChannel)),
     photo: isEssay ? (pendingPhoto || '') : '',
     understanding: document.getElementById('add-understanding').value.trim(),
     example: document.getElementById('add-example').value.trim(),
