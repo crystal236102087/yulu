@@ -411,7 +411,7 @@
         <div class="px-6 py-5 space-y-5">
           <div>
             <label class="block text-[11px] font-bold text-inklight mb-1.5 tracking-[0.2em]">书名 <span class="text-cinnabar">✦</span></label>
-            <input id="book-name" type="text" placeholder="如：庄子" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] font-bold">
+            <input id="book-name" type="text" oninput="onBookNameInput()" placeholder="如：庄子" class="w-full px-3 py-2.5 rounded-xl border-2 border-line bg-paper text-[15px] font-bold">
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -809,6 +809,33 @@ const COVER_PALETTE = {
   '待归类':     { bg: '#dcd6c6', type: 'flat',  ink: '#3a3428', art: 'cloud'  },
 };
 const MOTIF_DEFAULT = COVER_PALETTE['待归类'];
+
+/* 系统内置的系列分类（新增书目时全部可选，保证经济类等都有入口） */
+const SERIES_CATS = [
+  '国学经典', '儒门经典', '道家经典', '现当代文学', '现代散文',
+  '劝善经典', '经济学', '经济管理', '管理', '待归类',
+];
+
+/* 按书名智能推荐分类（关键词命中；未命中返回空） */
+const CAT_KEYWORDS = [
+  ['儒门经典', ['论语', '孟子', '大学', '中庸', '荀子', '朱熹', '四书', '孔子', '曾子', '子思']],
+  ['道家经典', ['道德经', '老子', '庄子', '列子', '南华经', '清静经', '周易参同契', '文子']],
+  ['劝善经典', ['了凡四训', '袁了凡', '太上感应篇', '文昌帝君', '俞净意', '安士全书', '菜根谭', '朱子家训']],
+  ['国学经典', ['诗经', '尚书', '礼记', '春秋', '左传', '史记', '资治通鉴', '古文观止', '世说新语', '楚辞', '唐诗', '宋词']],
+  ['经济学', ['经济学', '国富论', '资本论', '微观经济', '宏观经济', '博弈论', '金融', '货币', '投资', '财报', '会计', '薛兆丰', '曼昆']],
+  ['经济管理', ['置身事内', '中国经济', '制度', '改革', '财政', '转型', '发展经济学', '增长']],
+  ['管理', ['管理', '领导力', '穷查理', '原则', '从优秀到卓越', '卓有成效', '德鲁克', '稻盛和夫', '活法', '干法']],
+  ['现当代文学', ['平凡的世界', '路遥', '活着', '余华', '莫言', '围城', '钱钟书', '边城', '沈从文', '白鹿原', '穆斯林的葬礼', '三体', '刘慈欣']],
+  ['现代散文', ['散文', '鲁迅', '朝花夕拾', '背影', '朱自清', '汪曾祺', '林清玄', '余秋雨', '文化苦旅', '雅舍', '梁实秋']],
+];
+function guessCategory(name) {
+  const n = String(name || '').replace(/[《》\s]/g, '');
+  if (!n) return '';
+  for (const [cat, keys] of CAT_KEYWORDS) {
+    if (keys.some(k => n.includes(k))) return cat;
+  }
+  return '';
+}
 
 /* ---------- 辅助图形 ---------- */
 function coverArt(kind, ink, faint) {
@@ -1405,6 +1432,18 @@ let pickedBookColor = null;
 
 let editingBookId = null;   // 正在编辑的书 id（null = 新增）
 
+/* 新增书目时输入书名 → 实时推荐分类（仅在当前分类为空或不匹配时自动填） */
+function onBookNameInput() {
+  if (editingBookId) return;   // 编辑既有书时不擅自改分类
+  const nameEl = document.getElementById('book-name');
+  const catEl = document.getElementById('book-category');
+  const sug = guessCategory(nameEl ? nameEl.value : '');
+  if (sug) {
+    catEl.value = sug;
+    const pal = COVER_PALETTE[sug];
+    if (pal && BOOK_COLORS.includes(pal.bg)) pickBookColor(pal.bg);
+  }
+}
 function openBookModal(id) {
   editingBookId = id || null;
   const eb = editingBookId ? data.books.find(b => b.id === editingBookId) : null;
@@ -1412,13 +1451,18 @@ function openBookModal(id) {
   document.getElementById('book-author').value = eb ? (eb.author === '佚名' ? '' : eb.author) : '';
   document.getElementById('book-category').value = eb ? eb.category : '';
   document.getElementById('book-finished').checked = eb ? !!eb.finished : false;
-  // 分类候选 = 现有书目的分类（并保证「待归类」可选）
-  const cats = [...new Set([...data.books.map(b => b.category), '待归类', '国学经典', '现当代文学', '经济学', '现代散文'])].filter(Boolean);
+  // 分类候选 = 系统全部系列分类 + 现有书目的分类（去重，顺序固定）
+  const cats = [...new Set([...SERIES_CATS, ...data.books.map(b => b.category)])].filter(Boolean);
   document.getElementById('book-cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
   // 常用分类快捷按钮：一点就把分类填上，顺带套用该分类的系列封面主色
   document.getElementById('book-cat-quick').innerHTML = cats.map(c => `
     <button type="button" onclick="quickPickCat('${c}')"
       class="px-3 py-1.5 rounded-full text-[11px] font-bold border border-line bg-paper text-inklight active:scale-95 transition-transform">${c}</button>`).join('');
+  // 新增书目：按书名智能预填分类（如「孟子」→儒门经典）
+  if (!eb) {
+    const sug = guessCategory(document.getElementById('book-name').value);
+    if (sug) { document.getElementById('book-category').value = sug; }
+  }
   // 颜色：编辑时用本书原色；新增时选「书架上用得最少」的颜色，让书脊更错落
   const use = {};
   data.books.forEach(b => { use[b.color] = (use[b.color] || 0) + 1; });
@@ -2020,13 +2064,23 @@ async function syncJoin(migrateCode) {
     const file = await ghGetFile(code, s.token);
     if (file) {
       if (file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
-        data = normalizeData(file.data.payload);
+        // 双向合并：本地已有的书不会被云端清掉
+        const merged = mergeData(data, file.data.payload);
+        const needPush = !sameData(merged, file.data.payload);
+        data = merged;
         try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
+        let sha = file.sha;
+        if (needPush) sha = await ghPutFile(code, s.token, { updatedAt: Date.now(), payload: data }, file.sha);
+        setSync({ token: s.token, code, sha, lastSyncAt: file.data.updatedAt || 0 });
+        clearSyncDirty();
+        showToast(needPush ? '绑定成功，本地书目已合并 ✓' : '绑定成功，已同步 ✓');
+        render();
+      } else {
+        setSync({ token: s.token, code, sha: file.sha, lastSyncAt: file.data.updatedAt || 0 });
+        clearSyncDirty();
+        showToast('绑定成功，已同步 ✓');
+        render();
       }
-      setSync({ token: s.token, code, sha: file.sha, lastSyncAt: file.data.updatedAt || 0 });
-      clearSyncDirty();
-      showToast('绑定成功，已同步 ✓');
-      render();
     } else {
       const updatedAt = Date.now();
       const sha = await ghPutFile(code, s.token, { updatedAt, payload: data });
@@ -2048,13 +2102,16 @@ async function syncPush() {
     sha = await ghPutFile(s.code, s.token, { updatedAt, payload: data }, s.sha);
   } catch (e) {
     if (e.message === 'CONFLICT') {
-      // 远端被其他设备改过：拉最新比较时间戳
+      // 远端被其他设备改过：拉最新后按 id 双向合并（不整份覆盖，避免丢本地新书）
       const file = await ghGetFile(s.code, s.token);
-      if (file && (file.data.updatedAt || 0) > updatedAt && file.data.payload) {
-        data = normalizeData(file.data.payload);
+      if (file && file.data.payload) {
+        const merged = mergeData(data, file.data.payload);
+        data = merged;
         try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (er) {}
-        setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: file.data.updatedAt });
-        clearSyncDirty(); render();
+        sha = await ghPutFile(s.code, s.token, { updatedAt, payload: data }, file.sha);
+        markSyncDirty(); clearSyncDirty();
+        render();
+        setSync({ token: s.token, code: s.code, sha, lastSyncAt: updatedAt });
         return;
       }
       sha = await ghPutFile(s.code, s.token, { updatedAt, payload: data }, file ? file.sha : undefined);
@@ -2063,24 +2120,61 @@ async function syncPush() {
   setSync({ token: s.token, code: s.code, sha, lastSyncAt: updatedAt });
 }
 
-/* 立即同步（手动 / 启动 / 切前台） */
+/* 按 id 逐项合并两组数据：两边都保留，同 id 时本地优先（本地是刚编辑过的）
+   目的：避免「云端整份覆盖本地」把新加的书吞掉 */
+function mergeById(localArr, remoteArr) {
+  const out = [];
+  const seen = new Set();
+  (Array.isArray(localArr) ? localArr : []).forEach(x => {
+    if (!x || !x.id || seen.has(x.id)) return;
+    seen.add(x.id); out.push(x);
+  });
+  (Array.isArray(remoteArr) ? remoteArr : []).forEach(x => {
+    if (!x || !x.id || seen.has(x.id)) return;
+    seen.add(x.id); out.push(x);
+  });
+  return out;
+}
+function mergeData(localD, remoteD) {
+  const l = localD || {}, r = remoteD || {};
+  return normalizeData({
+    books: mergeById(l.books, r.books),
+    quotes: mergeById(l.quotes, r.quotes),
+  });
+}
+/* 两包数据是否等价（用于判断合并后是否需要回推） */
+function sameData(a, b) {
+  const k = (d) => JSON.stringify({ b: d.books, q: d.quotes });
+  return k(a) === k(b);
+}
+
+/* 立即同步（手动 / 启动 / 切前台）—— 双向合并，绝不整份覆盖 */
 async function syncNow(manual) {
   const s = getSync(); if (!s || !s.token || !s.code || syncBusy) return;
   syncBusy = true;
   try {
     const file = await ghGetFile(s.code, s.token);
     const remoteAt = file ? (file.data.updatedAt || 0) : 0;
-    if (file && remoteAt > s.lastSyncAt && file.data.payload && (file.data.payload.quotes || file.data.payload.books)) {
-      data = normalizeData(file.data.payload);
+    const remoteOk = file && file.data.payload && (file.data.payload.quotes || file.data.payload.books);
+
+    if (remoteOk && remoteAt > s.lastSyncAt) {
+      // 云端有更新：双向合并（本地独有的书不会被清掉），合并结果落本地
+      const merged = mergeData(data, file.data.payload);
+      const needPush = !sameData(merged, file.data.payload); // 本地有云端没有的东西 → 需回推
+      data = merged;
       try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
       setSync({ token: s.token, code: s.code, sha: file.sha, lastSyncAt: remoteAt });
-      clearSyncDirty();
+      if (needPush) { markSyncDirty(); clearSyncDirty(); await syncPush(); }
+      else clearSyncDirty();
       render();
+      if (manual) showToast(needPush ? '已合并并上传 ✓' : '同步完成 ✓');
     } else if (syncDirty || s.lastSyncAt === 0) {
       await syncPush();
       clearSyncDirty();
+      if (manual) showToast('同步完成 ✓');
+    } else if (manual) {
+      showToast('已是最新 ✓');
     }
-    if (manual) showToast('同步完成 ✓');
   } catch (e) { if (manual) showToast('同步失败：' + e.message); }
   finally { syncBusy = false; if (currentTab === 'mine') render(); }
 }
