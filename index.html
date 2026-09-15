@@ -315,6 +315,7 @@
         <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
           <h3 class="font-black text-lg tracking-wide">文摘详注</h3>
           <div class="flex gap-2">
+            <button id="detail-edit" class="w-9 h-9 rounded-full bg-paper border font-bold text-sm" style="border-color:#56694a66;color:#56694a">改</button>
             <button id="detail-del" class="w-9 h-9 rounded-full bg-paper border border-cinnabar/30 text-cinnabar font-bold text-sm">删</button>
             <button onclick="closeDetail()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold">✕</button>
           </div>
@@ -972,11 +973,18 @@ document.getElementById('detail-del').onclick = function(e) {
   render();
   showToast('已删除');
 };
+document.getElementById('detail-edit').onclick = function(e) {
+  e.stopPropagation();
+  if (!currentDetailId) return;
+  openEditModal(currentDetailId);
+};
 
-// ==================== 添加 ====================
+// ==================== 添加 / 编辑 ====================
 let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
 let addChannel = '书本';     // 当前新增摘录的渠道
+let editingId = null;        // 正在编辑的文摘 id（null = 新增模式）
 function openAddModal(ch) {
+  editingId = null;    // 明确进入「新增」模式
   // 智能默认：显式传入渠道用之；否则若正停留在某渠道列表（含随笔），默认选它；回到首页则默认书本
   addChannel = ch || (CHANNELS.some(c => c.id === homeView) ? homeView : '书本');
   const sel = document.getElementById('add-book');
@@ -991,6 +999,37 @@ function openAddModal(ch) {
   document.getElementById('btn-similar-tx').textContent = '搜罗相似句';
   document.getElementById('btn-similar').disabled = false;
   document.getElementById('btn-similar').classList.remove('opacity-50','pointer-events-none');
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+/* 编辑已有文摘/随笔：预填全部字段（配图、手动相似句原样带回，AI 搜罗的保留不动） */
+function openEditModal(id) {
+  const q = data.quotes.find(x => x.id === id);
+  if (!q) return;
+  editingId = id;
+  addChannel = q.channel || '书本';
+  const sel = document.getElementById('add-book');
+  sel.innerHTML = data.books.map(b => `<option value="${b.id}">${b.name} · ${b.author}</option>`).join('');
+  if (q.bookId) sel.value = q.bookId;
+  renderAddChannel();
+  document.getElementById('add-original').value = q.original || '';
+  document.getElementById('add-source').value = (q.source && q.source !== '未注明出处') ? q.source : '';
+  document.getElementById('add-understanding').value = q.understanding || '';
+  document.getElementById('add-example').value = q.example || '';
+  document.getElementById('add-note').value = q.note || '';
+  const manual = (q.related || []).filter(r => r.from !== 'ai' && r.from !== 'lib');
+  document.getElementById('add-related').value = manual.map(r => {
+    const t = r.type === 'English' ? '英文' : '古文';
+    return r.source ? `${t}｜${r.text}——${r.source}` : `${t}｜${r.text}`;
+  }).join('\n');
+  resetEssayPhoto();
+  if (q.photo) { pendingPhoto = q.photo; showPhotoPreview(q.photo); }
+  pendingAutoSimilar = [];
+  document.getElementById('auto-similar').innerHTML = '';
+  document.getElementById('btn-similar-ic').textContent = '🔍';
+  document.getElementById('btn-similar-tx').textContent = '搜罗相似句';
+  document.getElementById('btn-similar').disabled = false;
+  document.getElementById('btn-similar').classList.remove('opacity-50','pointer-events-none');
+  closeDetail();
   document.getElementById('add-modal').classList.remove('hidden');
 }
 function renderAddChannel() {
@@ -1016,8 +1055,8 @@ function renderAddChannel() {
   document.getElementById('add-original-label').innerHTML = isEssay
     ? '正文 <span class="text-cinnabar">✦</span>'
     : '原文 <span class="text-cinnabar">✦</span>';
-  document.getElementById('add-modal-title').textContent = isEssay ? '写一篇随笔' : '新摘一句';
-  document.getElementById('add-save-btn').textContent = isEssay ? '记 下 此 刻' : '收 入 书 囊';
+  document.getElementById('add-modal-title').textContent = editingId ? (isEssay ? '修改随笔' : '修改文摘') : (isEssay ? '写一篇随笔' : '新摘一句');
+  document.getElementById('add-save-btn').textContent = editingId ? '保 存 修 改' : (isEssay ? '记 下 此 刻' : '收 入 书 囊');
   // 随笔配图区：仅随笔显示
   document.getElementById('add-photo-row').style.display = isEssay ? '' : 'none';
   document.getElementById('add-source-star').style.visibility = 'hidden';
@@ -1026,7 +1065,7 @@ function renderAddChannel() {
   else src.placeholder = '《论语·阳货》';
 }
 function setAddChannel(id) { addChannel = id; renderAddChannel(); }
-function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); editingId = null; }
 
 /* ==================== 随笔配图：选图 → 压缩 → 预览 ==================== */
 let pendingPhoto = null;    // 压缩后的 dataURL（待随随笔保存）
@@ -1051,20 +1090,23 @@ function compressPhoto(file, cb) {
   };
   reader.readAsDataURL(file);
 }
+function showPhotoPreview(dataUrl) {
+  const pv = document.getElementById('add-photo-preview');
+  pv.classList.remove('hidden');
+  pv.innerHTML = `
+    <div class="relative inline-block">
+      <img src="${dataUrl}" class="w-24 h-24 object-cover rounded-xl border-2 border-line shadow-card">
+      <button type="button" onclick="removeEssayPhoto()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-ink text-white text-[11px] font-black flex items-center justify-center shadow active:scale-90 transition-transform">✕</button>
+    </div>`;
+  document.getElementById('btn-add-photo').classList.add('hidden');
+}
 function pickEssayPhoto(input) {
   const f = input.files && input.files[0];
   if (!f) return;
   if (!/^image\//.test(f.type)) { showToast('只能选图片哦'); input.value = ''; return; }
   compressPhoto(f, (dataUrl) => {
     pendingPhoto = dataUrl;
-    const pv = document.getElementById('add-photo-preview');
-    pv.classList.remove('hidden');
-    pv.innerHTML = `
-      <div class="relative inline-block">
-        <img src="${dataUrl}" class="w-24 h-24 object-cover rounded-xl border-2 border-line shadow-card">
-        <button type="button" onclick="removeEssayPhoto()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-ink text-white text-[11px] font-black flex items-center justify-center shadow active:scale-90 transition-transform">✕</button>
-      </div>`;
-    document.getElementById('btn-add-photo').classList.add('hidden');
+    showPhotoPreview(dataUrl);
   });
   input.value = '';
 }
@@ -1149,7 +1191,10 @@ function bookPressEnd() { clearTimeout(bookPressTimer); }
 
 function saveQuote() {
   const original = document.getElementById('add-original').value.trim();
-  if (!original) { showToast('请先抄录原文'); return; }
+  if (!original) { showToast(editingId ? '正文不能为空' : '请先抄录原文'); return; }
+  const isEdit = !!editingId;
+  const target = isEdit ? data.quotes.find(x => x.id === editingId) : null;
+  if (isEdit && !target) { editingId = null; return; }
   const manualRelated = document.getElementById('add-related').value.trim().split('\n').filter(Boolean).map(line => {
     let type = '古文', rest = line;
     const m = line.match(/^(古文|中文|English|英文|英谚|谚语)\s*[｜|:：]?\s*(.*)$/);
@@ -1166,8 +1211,10 @@ function saveQuote() {
   const related = [...autoRelated, ...manualRelated];
   const isBook = addChannel === '书本';
   const isEssay = addChannel === '随笔';
-  data.quotes.unshift({
-    id: 'q' + Date.now(),
+  // 编辑时：AI/精选搜罗的相似句原样保留，只重算手动部分
+  const keepAuto = isEdit ? (target.related || []).filter(r => r.from === 'ai' || r.from === 'lib') : [];
+  const finalRelated = isEdit ? [...keepAuto, ...related] : related;
+  const fields = {
     channel: addChannel,
     bookId: isBook ? document.getElementById('add-book').value : null,
     original,
@@ -1176,14 +1223,19 @@ function saveQuote() {
     understanding: document.getElementById('add-understanding').value.trim(),
     example: document.getElementById('add-example').value.trim(),
     note: document.getElementById('add-note').value.trim(),
-    related,
-    createdAt: Date.now(),
-  });
+    related: finalRelated,
+  };
+  if (isEdit) {
+    Object.assign(target, fields);
+  } else {
+    data.quotes.unshift({ id: 'q' + Date.now(), createdAt: Date.now(), ...fields });
+  }
+  editingId = null;
   saveData();
   closeAddModal();
-  if (isEssay) { homeView = '随笔'; filterBookId = 'all'; switchTab('quotes'); }
+  if (isEssay && !isEdit) { homeView = '随笔'; filterBookId = 'all'; switchTab('quotes'); }
   else render();
-  showToast(isEssay ? '已记下此刻 ✦' : '已收入书囊 ✦');
+  showToast(isEdit ? '已保存修改 ✦' : (isEssay ? '已记下此刻 ✦' : '已收入书囊 ✦'));
 }
 
 // ==================== 相似佳句 · 自动搜罗引擎 ====================
