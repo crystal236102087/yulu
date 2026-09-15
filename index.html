@@ -780,7 +780,7 @@ const COVER_PALETTE = {
   '道家经典':   { bg: '#d9a273', type: 'flat',  ink: '#3a2415', art: 'taiji'    }, // 赭橙纸感
   '道家':       { bg: '#d9a273', type: 'flat',  ink: '#3a2415', art: 'taiji'    },
   '现当代文学': { bg: '#8f9a63', type: 'split', ink: '#ffffff', art: 'field'    }, // 橄榄绿→麦田
-  '现代散文':   { bg: '#8a6d3b', type: 'flat',  ink: '#fdf6e6', art: 'bamboo'   },
+  '现代散文':   { bg: '#d9c08f', type: 'flat',  ink: '#4a3a22', art: 'bamboo'   }, // 暖米黄竹影
   '劝善经典':   { bg: '#f6f0dc', type: 'fade',  ink: '#3a2b22', art: 'none'     }, // 米白→赭橙
   '经济学':     { bg: '#f4f2ec', type: 'flat',  ink: '#221f1a', art: 'grid'     }, // 素白线稿
   '管理':       { bg: '#e4f0c0', type: 'flat',  ink: '#2f3a1a', art: 'none'     },
@@ -861,7 +861,7 @@ function coverArt(kind, ink, faint) {
    h = 封面高度(px)，封面宽高比 2:3 */
 function bookCoverHTML(b, h, n) {
   const pal = COVER_PALETTE[b.category] || MOTIF_DEFAULT;
-  const bg = b.color || pal.bg;
+  const bg = pal.bg;   // 系列封面：颜色完全由分类决定，不再用书本存的旧色
   const nameChars = [...(b.name || '书')];
   const nameLen = nameChars.length;
 
