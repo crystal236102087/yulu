@@ -480,10 +480,17 @@ function channelArt(id) {
 /* 数据规范化：确保 quotes / books 恒为数组（防止同步数据缺字段导致渲染崩溃） */
 function normalizeData(d) {
   if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(defaultData));
-  return {
-    quotes: Array.isArray(d.quotes) ? d.quotes.map(q => ({ ...q, channel: q.channel || '书本' })) : [],
-    books: Array.isArray(d.books) ? d.books : [],
-  };
+  const books = Array.isArray(d.books) ? d.books : [];
+  const quotes = Array.isArray(d.quotes) ? d.quotes.map(q => ({ ...q, channel: q.channel || '书本' })) : [];
+  // 数据修复：书本渠道的老摘录若没挂靠 bookId，按出处到已有书架里补挂（不新建书，避免旧数据撑爆书架）
+  quotes.forEach(q => {
+    if (q.channel === '书本' && !q.bookId && q.source && q.source !== '未注明出处') {
+      const bare = q.source.replace(/[《》]/g, '').replace(/[—－-]{1,2}.*$/, '').replace(/[（(]?第[一二三四五六七八九十\d]+[部册卷篇][）)]?$/, '').trim();
+      const hit = bare && books.find(b => b.name === bare || bare.startsWith(b.name) || b.name.startsWith(bare));
+      if (hit) q.bookId = hit.id;
+    }
+  });
+  return { quotes, books };
 }
 function loadData() {
   // 旧版「拾句」数据无损迁移到新版「余录」（仅当新 key 尚无数据时）
@@ -1192,6 +1199,33 @@ function bookPressStart(id) {
 }
 function bookPressEnd() { clearTimeout(bookPressTimer); }
 
+/* 出处书名 → 书架书 id：先模糊匹配已有书；匹配不到就自动上架一本新书（默认「待归类」）。
+   返回 { id, created } —— created 为新建的书名（若新建），供保存后提示用。 */
+let autoCreatedBook = null;
+function matchOrCreateBook(srcText) {
+  autoCreatedBook = null;
+  if (!srcText) return null;
+  // 归一化：去书名号、去作者破折号，取出书名主体
+  const bare = srcText.replace(/[《》]/g, '').replace(/[—－-]{1,2}.*$/, '').trim();
+  if (!bare) return null;
+  // 1) 精确 / 前缀匹配已有书
+  const hit = data.books.find(b => b.name === bare || bare.startsWith(b.name) || b.name.startsWith(bare));
+  if (hit) return hit.id;
+  // 2) 自动上架：书名取 bare，去掉「第一部 / 上册」这类册次后缀
+  const bookName = bare.replace(/[（(]?第[一二三四五六七八九十\d]+[部册卷篇][）)]?$/, '').trim() || bare;
+  // 二次确认：去掉册次后可能又能匹配上
+  const hit2 = data.books.find(b => b.name === bookName);
+  if (hit2) return hit2.id;
+  // 3) 新建书：用书架上用得最少的颜色，分类「待归类」
+  const use = {};
+  data.books.forEach(b => { use[b.color] = (use[b.color] || 0) + 1; });
+  const color = [...BOOK_COLORS].sort((a, b) => (use[a] || 0) - (use[b] || 0))[0];
+  const nb = { id: 'b' + Date.now(), name: bookName, author: '', category: '待归类', color, finished: false, finishDate: '' };
+  data.books.push(nb);
+  autoCreatedBook = bookName;
+  return nb.id;
+}
+
 function saveQuote() {
   const original = document.getElementById('add-original').value.trim();
   if (!original) { showToast(editingId ? '正文不能为空' : '请先抄录原文'); return; }
@@ -1217,13 +1251,11 @@ function saveQuote() {
   // 编辑时：AI/精选搜罗的相似句原样保留，只重算手动部分
   const keepAuto = isEdit ? (target.related || []).filter(r => r.from === 'ai' || r.from === 'lib') : [];
   const finalRelated = isEdit ? [...keepAuto, ...related] : related;
-  // bookId 改为按「出处」书名去书架上匹配（书本渠道才挂靠），找不到则留空
+  // bookId：按「出处」书名去书架匹配；匹配不到则「自动上架」一本新书（默认待归类）
   let matchedBookId = null;
   const srcText = isEssay ? '' : document.getElementById('add-source').value.trim();
   if (isBook && srcText) {
-    const bare = srcText.replace(/^《|》$/g, '').trim();
-    const hit = data.books.find(b => b.name === bare || b.name === srcText || bare.startsWith(b.name) || b.name.startsWith(bare));
-    if (hit) matchedBookId = hit.id;
+    matchedBookId = matchOrCreateBook(srcText);
   }
   const fields = {
     channel: addChannel,
@@ -1246,7 +1278,11 @@ function saveQuote() {
   closeAddModal();
   if (isEssay && !isEdit) { homeView = '随笔'; filterBookId = 'all'; switchTab('quotes'); }
   else render();
-  showToast(isEdit ? '已保存修改 ✦' : (isEssay ? '已记下此刻 ✦' : '已收入书囊 ✦'));
+  if (autoCreatedBook && !isEdit) {
+    showToast(`已收入书囊 ✦ 新书《${autoCreatedBook}》已上架`);
+  } else {
+    showToast(isEdit ? '已保存修改 ✦' : (isEssay ? '已记下此刻 ✦' : '已收入书囊 ✦'));
+  }
 }
 
 // ==================== 相似佳句 · 自动搜罗引擎 ====================
