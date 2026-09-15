@@ -603,14 +603,16 @@ function renderChannelList() {
 
   return `
     <div class="mb-4">
-      <div class="flex items-center gap-3 mb-4">
-        <button onclick="homeView='gallery';render()" class="w-9 h-9 rounded-full bg-card border border-line text-inklight font-bold active:scale-95 transition-transform shrink-0">←</button>
-        <div class="flex items-baseline gap-2.5 min-w-0">
-          <h3 class="font-black text-[18px] tracking-[0.12em]" style="color:${ch.color}">${ch.icon} ${ch.id}</h3>
-          <span class="text-[10px] text-inklight num-badge">${quotes.length} 条</span>
+      <div class="sticky top-0 z-30 -mx-5 px-5 pt-3 pb-3 mb-2" style="background:linear-gradient(180deg,#f7f2e6 0%,#f7f2e6 78%,rgba(247,242,230,0) 100%)">
+        <div class="flex items-center gap-3">
+          <button onclick="homeView='gallery';render();document.getElementById('main-content').scrollTop=0" class="w-10 h-10 rounded-full bg-card border border-line text-inklight font-bold active:scale-95 transition-transform shrink-0 shadow-sm">←</button>
+          <div class="flex items-baseline gap-2.5 min-w-0">
+            <h3 class="font-black text-[18px] tracking-[0.12em]" style="color:${ch.color}">${ch.icon} ${ch.id}</h3>
+            <span class="text-[10px] text-inklight num-badge">${quotes.length} 条</span>
+          </div>
         </div>
+        ${bookChips ? `<div class="-mx-5 px-5 mt-2.5">${bookChips}</div>` : ''}
       </div>
-      ${bookChips}
       ${quotes.length === 0 ? `
         <div class="text-center py-20 text-inklight fade-in">
           <div class="brush-title text-7xl opacity-25 mb-3">${ch.id === '随笔' ? '笔' : '静'}</div>
