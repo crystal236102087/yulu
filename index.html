@@ -116,49 +116,57 @@
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; padding: 8px 6px; text-align: center;
     }
-    /* ===== 统一封面设计系统（程序化绘制）=====
-       结构：纸张底色 + 噪点 + 双线内框 + 右上印章 + 顶部标题区 + 辅助图形 + 底部分类信息栏 */
-    .cv-noise {           /* 纸张纤维噪点：用极细的斜纹模拟纸感 */
+    /* ===== 统一封面设计系统（照搬参考图版式）=====
+       版式：纸张底色(+噪点/纸纹) → 细金线双内框 → 框内顶部居中印章 → 竖排书名+作者
+             → 底部金色信息栏(左右如意云头) → 立体书脊/书口高光 */
+    .cv-paper {           /* 纸张肌理：斜纹 + 极淡斑驳，模拟特种纸 */
       background-image:
-        repeating-linear-gradient(43deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 3px),
-        repeating-linear-gradient(-47deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 4px),
-        radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%);
+        repeating-linear-gradient(41deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(-49deg, rgba(0,0,0,0.028) 0 1px, transparent 1px 4px);
     }
-    .cv-frame {           /* 内描边：留出上下天地 */
-      position: absolute; left: 8px; right: 8px; top: 9px; bottom: 44px;
-      border: 1px solid rgba(255,255,255,0.36);
-      border-radius: 1px;
+    .cv-line {            /* 细金线内框（参考图特征：上下左右各留边，底部让位给信息栏） */
+      position: absolute; left: 9%; right: 9%; top: 7%; bottom: 21%;
+      border: 1px solid rgba(196,164,105,0.85);
+      box-shadow: inset 0 0 0 2.5px rgba(0,0,0,0);
       pointer-events: none;
     }
-    .cv-frame::before {   /* 双线描边：内侧再一道细线 */
-      content: ''; position: absolute; inset: 2.5px;
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 1px;
+    .cv-line::before {    /* 第二道线：更细，贴近外框（参考图为双线框） */
+      content: ''; position: absolute; inset: 2px;
+      border: 1px solid rgba(196,164,105,0.5);
     }
-    .cv-seal {            /* 右上角方形印章（取书名首字） */
-      position: absolute; right: 14px; top: 15px; width: 21px; height: 21px;
-      border: 1.5px solid rgba(255,255,255,0.55); border-radius: 2px;
+    .cv-seal {            /* 框内顶部居中方印（参考图位置） */
+      position: absolute; left: 50%; transform: translateX(-50%); top: 7.5%;
+      width: 19px; height: 19px; border-radius: 2px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.72);
-      line-height: 1; letter-spacing: 0;
-      background: rgba(255,255,255,0.06);
+      font-size: 10px; font-weight: 700; line-height: 1;
+      letter-spacing: 0; z-index: 3;
     }
-    .cv-title {           /* 书名：衬线大字 */
-      font-weight: 900; letter-spacing: 0.14em; line-height: 1.2;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-      text-indent: 0.14em;
+    .cv-vert {            /* 竖排书名区（中轴） */
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: row-reverse; align-items: flex-start;
+      z-index: 2;
     }
-    .cv-author { font-size: 9.5px; letter-spacing: 0.18em; opacity: 0.78; margin-top: 6px; text-indent: 0.18em; }
-    .cv-motif {           /* 辅助图形层：铺在文字下方 */
-      position: absolute; left: 0; right: 0; top: 0; bottom: 0;
-      pointer-events: none; opacity: 0.6;
+    .cv-name {            /* 书名大字（书法感用衬线 + 重字重模拟） */
+      font-family: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+      font-weight: 800; letter-spacing: 0.04em; line-height: 1.02;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.14);
     }
-    .cv-bar {             /* 底部信息栏：烫金底 + 分类名（系列统一标识） */
-      position: absolute; left: 8px; right: 8px; bottom: 9px; height: 25px;
+    .cv-by {              /* 作者小字 */
+      font-family: "Songti SC", "STSong", "SimSun", serif;
+      letter-spacing: 0.28em; opacity: 0.9;
+    }
+    .cv-bar {             /* 底部金色信息栏 */
+      position: absolute; left: 11%; right: 11%; bottom: 8.5%; height: 9%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
-      border-radius: 1px; text-indent: 0.2em;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.24em; text-indent: 0.24em;
+      border-radius: 1px; z-index: 3;
     }
+    .cv-cloud {           /* 信息栏左右如意云头（参考图标志性元素） */
+      position: absolute; bottom: 8.5%; height: 9%;
+      width: 13%; display: flex; align-items: center; z-index: 2;
+      pointer-events: none;
+    }
+    .cv-art { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
     /* 木质书架层板 */
     .shelf-board {
       height: 10px;
@@ -757,127 +765,168 @@ function renderEssayCard(q) {
 }
 
 // ---------- 书架页：仿真实书架（分类标题 + N books，封面并排） ----------
-/* ==================== 书籍封面设计系统 ====================
-   统一结构：纸张底色+噪点 → 双线内框 → 右上印章 → 书名(衬线) → 作者 → 辅助图形 → 底部信息栏
-   只通过「主色」与「分类对应的辅助图形」区分，尺寸与版式保持一致。 */
+/* ==================== 书籍封面设计系统（照搬参考图版式）====================
+   版式：纸张底色/纸纹 → 细金线双内框 → 框内顶部居中印章 → 竖排书名 + 作者小字
+        → 底部金色信息栏（左右如意云头）→ 书脊高光 + 底部投影
+   所有书统一版式，仅通过「底色/纸感 + 主色图形」区分。 */
 const COVER_PALETTE = {
-  // 分类 → 主色（与 BOOK_COLORS 同源，保证「手动配色」与「分类默认」观感一致）
-  '国学经典':   { bg: '#8e3b2c', motif: 'seal-cloud',  ink: '#fff4e6' },  // 朱红古籍
-  '道家经典':   { bg: '#9c7c35', motif: 'taiji',       ink: '#fffaf0' },  // 褐白纸感
-  '道家':       { bg: '#9c7c35', motif: 'taiji',       ink: '#fffaf0' },
-  '现当代文学': { bg: '#72855f', motif: 'field',       ink: '#fdfcef' },  // 橄榄绿
-  '现代散文':   { bg: '#8a6d3b', motif: 'bamboo',      ink: '#fff8ea' },
-  '经济学':     { bg: '#4a6670', motif: 'grid',        ink: '#f2f8fa' },
-  '儒门经典':   { bg: '#3a5666', motif: 'bamboo',      ink: '#f2f8fa' },
-  '待归类':     { bg: '#6b6a72', motif: 'cloud',       ink: '#f6f6f4' },
+  // 分类 → 封面主色（取自参考图实测色）
+  '国学经典':   { bg: '#c8402f', type: 'solid',   ink: '#2a1a12', line: '#d8b878', art: 'cloud'  }, // 朱红古籍
+  '儒门经典':   { bg: '#93a7ae', type: 'solid',   ink: '#25333a', line: '#dbe7ea', art: 'shanshui' }, // 灰蓝竹影山水
+  '道家经典':   { bg: '#c98d57', type: 'solid',   ink: '#f2ead9', line: '#e6cf9e', art: 'taiji'  }, // 褐白纸感太极
+  '道家':       { bg: '#c98d57', type: 'solid',   ink: '#f2ead9', line: '#e6cf9e', art: 'taiji'  },
+  '现当代文学': { bg: '#8f9463', type: 'split',   ink: '#ffffff', line: '#dfe3c8', art: 'field'  }, // 橄榄绿+米白田野
+  '现代散文':   { bg: '#8a6d3b', type: 'solid',   ink: '#fdf6e6', line: '#e0cd9c', art: 'bamboo' },
+  '劝善经典':   { bg: '#f3ecd8', type: 'fade',    ink: '#3a2b22', line: '#c9a978', art: 'shanshui' }, // 米白→赭橙
+  '经济学':     { bg: '#4a6670', type: 'solid',   ink: '#f2f8fa', line: '#cfe0e6', art: 'grid'   },
+  '待归类':     { bg: '#6f6d78', type: 'solid',   ink: '#f6f6f4', line: '#d6d4dd', art: 'cloud'  },
 };
-const MOTIF_DEFAULT = { bg: '#6b6a72', motif: 'cloud', ink: '#f6f6f4' };
+const MOTIF_DEFAULT = COVER_PALETTE['待归类'];
 
-/* 辅助图形：分类 → 一套矢量线稿（保持同一视觉语言：细线、半透明、居中偏下） */
-function coverMotif(kind, ink) {
-  const s = `stroke="${ink}" stroke-width="1.1" fill="none" opacity="0.5" stroke-linecap="round"`;
-  const f = `fill="${ink}" opacity="0.5"`;
+/* ---------- 底部信息栏左右对称的如意云头（参考图标志性元素）---------- */
+function barCloud(side, color) {
+  const flip = side === 'r' ? 'scale(-1,1) translate(-100,0)' : '';
+  return `<svg viewBox="0 0 100 34" preserveAspectRatio="none" style="width:100%;height:100%;opacity:0.95">
+    <g transform="${flip}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round">
+      <path d="M4 20 h30"/>
+      <path d="M30 20 c0-5 4-8 8-7 c1-4 6-6 9-3 c3-2 7 0 7 4 c4-1 7 2 7 6 c3 0 5 2 5 5"/>
+      <path d="M36 12 c2-3 6-4 9-2" opacity="0.8"/>
+      <path d="M18 26 h22" opacity="0.55"/>
+    </g>
+  </svg>`;
+}
+
+/* ---------- 主色图形（铺在书名下方，低对比、不抢字）---------- */
+function coverArt(kind, ink, faint) {
+  const o = faint ? 0.22 : 0.34;   // 压低存在感，保证书名是主角（参考图中图形都很淡）
+  const s = `stroke="${ink}" stroke-width="1.2" fill="none" opacity="${o}" stroke-linecap="round" stroke-linejoin="round"`;
+  const f = `fill="${ink}" opacity="${o}"`;
   switch (kind) {
-    case 'bamboo':  // 竹影：两竿细竹 + 竹叶（自右下斜出，避免出现长直线）
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+    case 'taiji':   // 太极：白色大圆 + 阴阳鱼（参考图：白色大圆压在主色上）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
+        <g opacity="${o * 2.2}">
+          <circle cx="50" cy="74" r="30" fill="#ffffff" opacity="0.72"/>
+          <path d="M50 44 A15 15 0 0 1 50 74 A15 15 0 0 0 50 104 A30 30 0 0 1 50 44 Z" fill="none"/>
+        </g>
+      </svg>`;
+    case 'shanshui': // 山水：远山层叠 + 竹枝（参考图 孟子）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
         <g ${s}>
-          <path d="M72 44 C70 62 69 84 71 112"/>
-          <path d="M84 56 C82 72 81 90 83 110"/>
-          <path d="M68 62 C60 58 55 59 50 63"/>
-          <path d="M60 76 C52 72 47 73 43 77"/>
-          <path d="M56 92 C48 88 43 89 39 93"/>
-          <path d="M70 72 C78 68 83 69 87 73"/>
-          <path d="M65 88 C73 84 78 85 82 89"/>
-          <path d="M62 104 C70 100 75 101 79 105"/>
+          <path d="M4 104 C16 92 26 96 34 90 C44 82 54 92 64 88 C76 83 86 90 96 84"/>
+          <path d="M8 116 C22 108 34 114 48 108 C62 102 76 110 92 104"/>
+          <path d="M14 128 C30 122 46 127 62 121 C74 117 84 121 92 118"/>
+          <path d="M78 40 C76 56 76 74 78 92"/>
+          <path d="M74 58 C66 54 62 55 58 59"/><path d="M70 70 C62 66 58 67 54 71"/>
+          <path d="M76 66 C84 62 88 63 92 67"/><path d="M74 80 C82 76 86 77 90 81"/>
+        </g>
+      </svg>`;
+    case 'bamboo':  // 竹影
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
+        <g ${s}>
+          <path d="M74 44 C72 62 71 84 73 112"/>
+          <path d="M86 56 C84 72 83 90 85 110"/>
+          <path d="M70 62 C62 58 57 59 52 63"/><path d="M62 76 C54 72 49 73 45 77"/>
+          <path d="M58 92 C50 88 45 89 41 93"/><path d="M72 72 C80 68 85 69 89 73"/>
+          <path d="M67 88 C75 84 80 85 84 89"/><path d="M64 104 C72 100 77 101 81 105"/>
         </g>
         <g ${f}><ellipse cx="22" cy="128" rx="24" ry="8"/></g>
       </svg>`;
-    case 'taiji':   // 太极：圆内阴阳（用描边+两个小圆表达）
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+    case 'field':   // 田野远山：起伏线 + 田垄 + 两个人影（参考图 平凡的世界）
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
         <g ${s}>
-          <circle cx="50" cy="72" r="30"/>
-          <path d="M50 42 A15 15 0 0 0 50 72 A15 15 0 0 1 50 102 A30 30 0 0 1 50 42"/>
-          <circle cx="50" cy="57" r="3.4"/><circle cx="50" cy="87" r="3.4"/>
-          <path d="M14 116 H86" opacity="0.35"/>
-        </g>
-      </svg>`;
-    case 'field':   // 田野远山：起伏线 + 两个人影 + 田垄
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
-        <g ${s}>
-          <path d="M6 108 C24 96 38 100 50 104 C64 108 78 100 94 92"/>
-          <path d="M10 122 C30 114 52 118 90 110"/>
-          <path d="M16 134 C36 128 60 132 86 124"/>
+          <path d="M-2 96 C18 86 34 92 50 94 C68 96 84 88 102 80"/>
+          <path d="M-2 108 C20 100 38 106 56 106 C74 106 88 100 102 94"/>
+          <path d="M-2 120 C22 114 42 119 62 118 C80 117 92 112 102 108"/>
+          <path d="M-2 132 C24 128 46 132 68 130 C84 128 94 125 102 122"/>
         </g>
         <g ${f}>
-          <ellipse cx="60" cy="101" rx="2.1" ry="4.4"/><ellipse cx="65" cy="100.5" rx="2.1" ry="4.6"/>
+          <ellipse cx="62" cy="98" rx="2.2" ry="4.6"/><ellipse cx="67" cy="97.5" rx="2.2" ry="4.8"/>
         </g>
       </svg>`;
-    case 'seal-cloud': // 云纹：如意云头（古籍感）
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
-        <g ${s}>
-          <path d="M22 118 c0-6 5-9 9-8 c0-7 7-11 13-8 c3-6 11-6 14 0 c6-3 13 1 13 8 c5-1 9 3 9 8"/>
-          <path d="M18 128 h64" opacity="0.4"/>
-          <path d="M30 106 c0-4 3-6 6-5 c0-5 5-7 8-5" opacity="0.55"/>
-        </g>
-      </svg>`;
-    case 'grid':    // 经济：几何网格 + 上升折线
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
-        <g ${s} opacity="0.36">
+    case 'grid':    // 经济：网格 + 上升折线
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
+        <g ${s} opacity="${o * 0.7}">
           <path d="M20 60 H80"/><path d="M20 78 H80"/><path d="M20 96 H80"/>
           <path d="M32 50 V106"/><path d="M50 50 V106"/><path d="M68 50 V106"/>
         </g>
         <g ${s}>
-          <path d="M22 116 L40 98 L56 106 L78 78"/>
-          <circle cx="78" cy="78" r="2.6"/>
+          <path d="M22 116 L40 98 L56 106 L78 78"/><circle cx="78" cy="78" r="2.6"/>
         </g>
       </svg>`;
-    case 'cloud':   // 默认：流云
+    case 'cloud':   // 流云（默认）
     default:
-      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice">
+      return `<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
         <g ${s}>
-          <path d="M20 112 c0-7 6-10 11-9 c1-8 8-12 15-8 c4-6 13-5 15 2 c7-2 12 3 11 9"/>
-          <path d="M24 124 c0-6 5-9 10-8 c1-7 7-10 13-7 c4-5 12-4 14 3"/>
-          <path d="M30 88 c0-5 4-8 9-7 c1-6 6-9 11-6" opacity="0.5"/>
+          <path d="M22 116 c0-7 6-10 11-9 c1-8 8-12 15-8 c4-6 13-5 15 2 c7-2 12 3 11 9"/>
+          <path d="M26 128 c0-6 5-9 10-8 c1-7 7-10 13-7 c4-5 12-4 14 3"/>
+          <path d="M32 92 c0-5 4-8 9-7 c1-6 6-9 11-6" opacity="0.5"/>
         </g>
       </svg>`;
   }
 }
 
-/* 生成一本书的封面 HTML */
+/* 生成一本书的封面 HTML
+   h = 封面高度(px)，封面宽高比固定 2:3（与参考图书脊一致） */
 function bookCoverHTML(b, h, n) {
   const pal = COVER_PALETTE[b.category] || MOTIF_DEFAULT;
   const bg = b.color || pal.bg;
-  // 印章内容：书名首字
-  const sealChar = (b.name || '书').slice(0, 1);
-  // 分类文字（底部信息栏）：优先显示分类，没有就显示「余录」
-  const barText = b.category && b.category !== '待归类' ? b.category : '余　录';
-  // 书名过长时缩字号，保证两行内可容纳
-  const nameLen = [...(b.name || '')].length;
-  const titleSize = nameLen <= 2 ? 21 : nameLen <= 4 ? 17.5 : nameLen <= 6 ? 14.5 : 12.5;
-  // 书名换行：≤4 字一行，5-8 字尽量两行均分
-  const chars = [...(b.name || '')];
-  let lines;
-  if (nameLen <= 4) lines = [b.name];
-  else if (nameLen <= 8) {
-    const half = Math.ceil(nameLen / 2);
-    lines = [chars.slice(0, half).join(''), chars.slice(half).join('')];
+  const nameChars = [...(b.name || '书')];
+  const nameLen = nameChars.length;
+
+  // 竖排书名：1-4 字竖排；超过 4 字改为横排（参考图 平凡的世界 即横排）
+  const vert = nameLen <= 4;
+  const nameSize = vert
+    ? (nameLen <= 2 ? 27 : nameLen <= 3 ? 23 : 19.5)
+    : (nameLen <= 6 ? 16 : nameLen <= 9 ? 14 : 12);
+
+  // 底色：solid 纯色 / split 上色下米白 / fade 上白下赭橙（参考图 了凡四训）
+  let bgCss;
+  if (pal.type === 'split') {
+    bgCss = `linear-gradient(180deg, ${bg} 0%, ${bg} 46%, #f0ead2 46.5%, #e8e0c2 100%)`;
+  } else if (pal.type === 'fade') {
+    bgCss = `linear-gradient(180deg, #f7f2e2 0%, #f4ecd6 42%, #e8c39c 74%, #d99a70 100%)`;
   } else {
-    lines = [chars.slice(0, 5).join(''), chars.slice(5, 10).join(''), chars.slice(10).join('')].filter(Boolean);
+    bgCss = `linear-gradient(158deg, ${shade(bg, 10)} 0%, ${bg} 46%, ${shade(bg, -12)} 100%)`;
   }
+
+  // 印章：朱底金线（浅色底）或 金底朱线（深色底）
+  const lightBg = (pal.ink[1] <= '7' || b.category === '劝善经典');
+  const sealBg = lightBg ? '#b8412f' : 'rgba(214,178,110,0.92)';
+  const sealInk = lightBg ? '#f0d9a8' : '#8e3b2c';
+
+  const sealChar = nameChars[0];
+
   return `
-    <div class="book-cover mx-auto relative cv-noise" style="background:linear-gradient(163deg,${bg} 0%,${bg} 58%,${shade(bg, -14)} 100%);height:${h}px">
-      <div class="cv-motif" style="opacity:${b.finished ? 0.34 : 0.6}">${coverMotif(pal.motif, pal.ink)}</div>
-      <div class="cv-frame"></div>
-      <div class="cv-seal">${sealChar}</div>
-      <div class="absolute inset-x-0 top-[38px] px-3 text-center" style="color:${pal.ink}">
-        <p class="cv-title" style="font-size:${titleSize}px">${lines.join('<br>')}</p>
-        ${b.author && b.author !== '佚名' ? `<p class="cv-author">${b.author}</p>` : ''}
-      </div>
-      <div class="cv-bar" style="background:linear-gradient(180deg,#e9dcb0,#d9c68c);color:#5b4a22;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.45),0 1px 2px rgba(0,0,0,0.12)">${barText}</div>
-      <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.16)"></span>
+    <div class="book-cover mx-auto relative cv-paper" style="background:${bgCss};height:${h}px;width:${Math.round(h * 2 / 3)}px">
+      <div class="cv-art" style="opacity:${b.finished ? 0.55 : 1}">${coverArt(pal.art, pal.ink, false)}</div>
+      <div class="cv-line"></div>
+      <div class="cv-seal" style="background:${sealBg};color:${sealInk};border:1px solid rgba(255,255,255,0.35)">${sealChar}</div>
+
+      ${vert
+        ? `<div class="cv-vert" style="top:24%;color:${pal.ink}">
+             ${b.author && b.author !== '佚名'
+               ? `<span class="cv-by" style="font-size:8.5px;writing-mode:vertical-rl;text-orientation:upright;margin-left:6px;align-self:flex-end;padding-bottom:2px">${b.author}</span>`
+               : ''}
+             <span class="cv-name" style="font-size:${nameSize}px;writing-mode:vertical-rl;text-orientation:upright">${b.name}</span>
+           </div>`
+        : `<div style="position:absolute;left:50%;transform:translateX(-50%);top:26%;width:78%;text-align:center;color:${pal.ink}">
+             <p class="cv-name" style="font-size:${nameSize}px;letter-spacing:0.08em">${
+               nameLen <= 6 ? b.name : nameChars.slice(0, Math.ceil(nameLen/2)).join('') + '<br>' + nameChars.slice(Math.ceil(nameLen/2)).join('')
+             }</p>
+             ${b.author && b.author !== '佚名' ? `<p class="cv-by" style="font-size:8.5px;margin-top:7px">${b.author}</p>` : ''}
+           </div>`}
+
+      <span class="cv-cloud" style="left:2%">${barCloud('l', pal.line)}</span>
+      <span class="cv-cloud" style="right:2%">${barCloud('r', pal.line)}</span>
+      <div class="cv-bar" style="background:linear-gradient(180deg,#e8d5a2${''},#d3bb7f);color:#5a4620;
+           box-shadow:inset 0 0 0 1px rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.14)">${
+        b.category && b.category !== '待归类' ? b.category : '余　录'}</div>
+
+      <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.18)"></span>
       ${b.finished
-        ? `<span class="absolute top-2 left-2 text-[8px] bg-paper/90 text-ink px-1.5 py-0.5 rounded-sm font-bold tracking-[0.15em] z-10 shadow-sm">读 完</span>`
-        : `<span class="absolute bottom-[42px] left-1/2 -translate-x-1/2 text-[8px] bg-ink/40 text-paper px-2 py-0.5 rounded-full font-bold tracking-widest z-10 whitespace-nowrap">在读</span>`}
+        ? `<span class="absolute top-1.5 left-1.5 text-[8px] px-1.5 py-0.5 rounded-sm font-bold tracking-[0.15em] z-10"
+             style="background:rgba(255,255,255,0.86);color:#3a2b22">读 完</span>`
+        : ''}
     </div>`;
 }
 /* 颜色加深/变浅（用于封面底部渐变收口） */
@@ -903,17 +952,17 @@ function renderShelf() {
           <span class="text-[11px] text-inklight num-badge mb-0.5">${books.length} books</span>
         </div>
         ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
-        <!-- 一层书架：封面并排 -->
+        <!-- 一层书架：封面统一尺寸并排 -->
         <div class="relative px-1">
-          <div class="flex items-end justify-start gap-4 flex-wrap min-h-[190px] pb-1">
+          <div class="flex items-end justify-start gap-4 flex-wrap min-h-[200px] pb-1">
             ${books.map(b => {
               const n = data.quotes.filter(q => q.bookId === b.id).length;
-              const h = 168 + (b.name.length % 3) * 7; // 高低错落
+              const h = 192;   // 统一高度：系列封面尺寸一致
               return `
               <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
                 onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
                 ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
-                class="active:scale-95 transition-transform" style="width:98px">
+                class="active:scale-95 transition-transform" style="width:128px">
                 ${bookCoverHTML(b, h, n)}
                 <div class="mt-2 text-center">
                   <p class="text-[11px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
