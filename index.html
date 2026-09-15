@@ -127,33 +127,34 @@
         radial-gradient(circle at 1px 1px, rgba(0,0,0,0.055) 0.55px, transparent 0.65px);
       background-size: auto, auto, 3px 3px;
     }
-    .cv-line {            /* 圆角双线框：顶部与两侧封闭，底部留口 */
-      position: absolute; left: 11%; right: 11%; top: 5.5%; bottom: 10%;
-      border: 1.3px solid rgba(255,255,255,0.62);
-      border-bottom: 0;
-      border-radius: 4px 4px 0 0;
-      pointer-events: none;
-    }
-    .cv-line::before {    /* 第二道细内线 */
-      content: ''; position: absolute; left: 3px; right: 3px; top: 3px; bottom: 0;
-      border: 0.8px solid rgba(255,255,255,0.34);
+    .cv-line {            /* 外框：圆角双线框（参考图外侧粗线） */
+      position: absolute; left: 8.5%; right: 8.5%; top: 4.5%; bottom: 9%;
+      border: 1.5px solid rgba(255,255,255,0.62);
       border-bottom: 0;
       border-radius: 3px 3px 0 0;
+      pointer-events: none;
     }
-    .cv-seal {            /* 框内顶部居中方形印章（描边 + 篆字） */
-      position: absolute; left: 50%; transform: translateX(-50%); top: 9%;
-      width: 20px; height: 20px; border-radius: 1.5px;
+    .cv-line::before {    /* 第二道细内线（参考图内细线） */
+      content: ''; position: absolute; left: 3.5px; right: 3.5px; top: 3.5px; bottom: 0;
+      border: 0.8px solid rgba(255,255,255,0.40);
+      border-bottom: 0;
+      border-radius: 2px 2px 0 0;
+    }
+    .cv-seal {            /* 框内顶部居中方形印章（描边 + 单字） */
+      position: absolute; left: 50%; transform: translateX(-50%); top: 8%;
+      width: 19cqw; height: 19cqw; max-width: 24px; max-height: 24px;
+      border-radius: 1.5px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 700; line-height: 1;
+      font-size: 9cqw; font-weight: 700; line-height: 1;
       letter-spacing: 0; z-index: 4;
       background: rgba(255,255,255,0.16);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.30);
     }
     .cv-dot {             /* 右上角装饰小方点 */
-      position: absolute; top: 9.5%; width: 8px; height: 8px;
-      border-radius: 1.5px; z-index: 4;
-      background: rgba(255,255,255,0.18);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.42);
+      position: absolute; top: 8.5%; width: 5.5cqw; height: 5.5cqw;
+      max-width: 7px; max-height: 7px;
+      border-radius: 1px; z-index: 4;
+      background: rgba(122,60,48,0.55);
     }
     .cv-name {            /* 书名：书法楷意（衬线重字重） */
       font-family: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
@@ -164,16 +165,17 @@
       font-family: "Songti SC", "STSong", "SimSun", serif;
       letter-spacing: 0.3em; opacity: 0.9;
     }
-    .cv-bar {             /* 框内底部信息名牌：米色宽牌 + 细金边 */
-      position: absolute; left: 14%; right: 14%; bottom: 3.5%;
-      height: 6.5%;
+    .cv-bar {             /* 框内底部信息名牌：窄米色牌 + 细金边（参考图约6成宽居中） */
+      position: absolute; left: 20%; right: 20%; bottom: 3%;
+      height: 8.5cqw; max-height: 18px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 7px; font-weight: 700; letter-spacing: 0.2em; text-indent: 0.2em;
+      font-size: 6.5cqw; font-weight: 700; letter-spacing: 0.16em; text-indent: 0.16em;
       border-radius: 2px; z-index: 5;
       border: 0.8px solid rgba(196,168,110,0.75);
       background: linear-gradient(180deg, #fdfbf3, #f4ecd6);
       color: #5a4a2c;
       box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+      white-space: nowrap; overflow: hidden;
     }
     .cv-cloud {           /* 右下角如意云纹 */
       position: absolute; right: 12%; bottom: 10.5%; width: 22%; height: 6%;
@@ -796,16 +798,16 @@ function renderEssayCard(q) {
    每本书版式统一，通过「分类底色 + 专属图形」区分。 */
 const COVER_PALETTE = {
   // 分类 → 封面色（取自参考图实测色）；ink = 书名/框线颜色
-  '国学经典':   { bg: '#db9e89', type: 'flat',  ink: '#3a2019', art: 'cloud'  }, // 珊瑚粉 · 深墨字
-  '儒门经典':   { bg: '#b5d0d4', type: 'flat',  ink: '#1b3138', art: 'none'   }, // 天青蓝 · 深墨字
-  '道家经典':   { bg: '#e8b07e', type: 'flat',  ink: '#3a2416', art: 'taiji'  }, // 赭橙 · 太极
-  '道家':       { bg: '#e8b07e', type: 'flat',  ink: '#3a2416', art: 'taiji'  },
-  '现当代文学': { bg: '#97a872', type: 'farm',  ink: '#ffffff', art: 'field'  }, // 橄榄绿→麦田 · 白字
-  '现代散文':   { bg: '#e3d6b7', type: 'flat',  ink: '#3f3320', art: 'scroll' }, // 米黄 · 书卷
-  '劝善经典':   { bg: '#fefff8', type: 'sepia', ink: '#2a2318', art: 'none'   }, // 米白→赭红 · 深墨字
-  '经济学':     { bg: '#dedede', type: 'flat',  ink: '#1a1a1a', art: 'grid'   }, // 素白 · 线稿网络
-  '经济管理':   { bg: '#c68359', type: 'flat',  ink: '#ffffff', art: 'city'   }, // 赭红 · 城市天际线（白字）
-  '管理':       { bg: '#55796b', type: 'flat',  ink: '#ffffff', art: 'sail'   }, // 墨绿 · 帆船（白字）
+  '国学经典':   { bg: '#eeab95', type: 'flat',  ink: '#4a2b22', art: 'none'   }, // 珊瑚粉 · 深墨字
+  '儒门经典':   { bg: '#c2e0e2', type: 'flat',  ink: '#26454e', art: 'none'   }, // 天青蓝 · 深墨字
+  '道家经典':   { bg: '#e2ab78', type: 'flat',  ink: '#4a2e18', art: 'taiji'  }, // 赭橙 · 太极
+  '道家':       { bg: '#e2ab78', type: 'flat',  ink: '#4a2e18', art: 'taiji'  },
+  '现当代文学': { bg: '#a0ad80', type: 'farm',  ink: '#ffffff', art: 'field'  }, // 橄榄绿→麦田 · 白字
+  '现代散文':   { bg: '#f6e6c2', type: 'flat',  ink: '#4a3a1e', art: 'scroll' }, // 米黄 · 书卷
+  '劝善经典':   { bg: '#fdfcf5', type: 'sepia', ink: '#2a2318', art: 'none'   }, // 米白→赭红 · 深墨字
+  '经济学':     { bg: '#fafafa', type: 'flat',  ink: '#1a1a1a', art: 'grid'   }, // 素白 · 线稿网络
+  '经济管理':   { bg: '#bf7949', type: 'flat',  ink: '#ffffff', art: 'city'   }, // 赭红 · 城市天际线（白字）
+  '管理':       { bg: '#4d7365', type: 'flat',  ink: '#ffffff', art: 'sail'   }, // 墨绿 · 帆船（白字）
   '待归类':     { bg: '#dcd6c6', type: 'flat',  ink: '#3a3428', art: 'cloud'  },
 };
 const MOTIF_DEFAULT = COVER_PALETTE['待归类'];
@@ -922,7 +924,7 @@ function coverArt(kind, ink, faint) {
 }
 
 /* 生成一本书的封面 HTML
-   h = 封面高度(px)，封面宽高比 2:3 */
+   封面宽高比固定 2:3，尺寸随容器自适应（字号用 cqw 容器单位，随封面缩放） */
 function bookCoverHTML(b, h, n) {
   const pal = COVER_PALETTE[b.category] || MOTIF_DEFAULT;
   const bg = pal.bg;                       // 系列封面：颜色只由分类决定
@@ -930,11 +932,14 @@ function bookCoverHTML(b, h, n) {
   const nameLen = nameChars.length;
   const light = pal.ink === '#ffffff';     // 白字封面（深底）
 
-  // 竖排：1-5 字；横排：6 字以上（长书名更适合横排，如 经济学原理）
-  const vert = nameLen <= 5;
+  // 竖排：≤4 字；≥5 字横排（参考图：经济学原理/穷查理宝典/置身事内 均横排大字）
+  // 例外：含「的」的 5 字书名（平凡的世界）参考图为竖排，保持竖排
+  const vert = nameLen <= 4 || (nameLen === 5 && b.name.includes('的'));
+  // 字号以封面宽度百分比表示（cqw），随封面缩放
+  // 横排需保证总宽度 = 字数 × 字号 ≤ 封面可用宽度（约 82cqw），故字号随字数递减
   const nameSize = vert
-    ? (nameLen <= 2 ? 25 : nameLen <= 3 ? 21 : nameLen <= 4 ? 17.5 : 14.5)
-    : (nameLen <= 6 ? 15 : nameLen <= 9 ? 13 : 11.5);
+    ? (nameLen <= 2 ? '30cqw' : nameLen <= 3 ? '25cqw' : '20.5cqw')
+    : (nameLen <= 5 ? '14cqw' : nameLen <= 6 ? '12.5cqw' : nameLen <= 8 ? '10.5cqw' : '9cqw');
 
   // 底色
   let bgCss;
@@ -951,42 +956,50 @@ function bookCoverHTML(b, h, n) {
   const inkCol = pal.ink;
   const decoBg = light ? 'rgba(255,255,255,0.16)' : 'rgba(58,48,32,0.06)';
 
-  // 图形层定位：一律避让书名区（书名约占 top 16%~52%）
+  // 图形层定位：一律避让书名区（竖排书名约占 top 22%~72%；横排书名约占 top 13%~30%）
   let artHTML = '';
   if (pal.art === 'field' || pal.art === 'city') {
-    artHTML = `<div class="cv-art" style="top:auto;bottom:0;height:36%;opacity:${b.finished ? 0.75 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
+    // 田野/城市：贴底，参考图里占下半幅
+    artHTML = `<div class="cv-art" style="top:auto;bottom:0;height:38%;opacity:${b.finished ? 0.75 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
   } else if (pal.art === 'taiji') {
-    artHTML = `<div class="cv-art" style="top:44%;height:36%;opacity:${b.finished ? 0.7 : 0.95}">${coverArt(pal.art, inkCol, false)}</div>`;
+    // 太极：竖排书名偏右，太极置于左侧偏下（参考图：道德经）
+    artHTML = `<div class="cv-art" style="top:42%;height:34%;opacity:${b.finished ? 0.7 : 0.95}">${coverArt(pal.art, inkCol, false)}</div>`;
   } else if (pal.art === 'sail') {
     // 帆船：横排书名时置于书名上方，竖排时置于底部
-    const sailTop = vert ? '58%' : '8%';
-    artHTML = `<div class="cv-art" style="top:${sailTop};height:22%;opacity:${b.finished ? 0.7 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
+    const sailTop = vert ? '56%' : '9%';
+    artHTML = `<div class="cv-art" style="top:${sailTop};height:24%;opacity:${b.finished ? 0.7 : 1}">${coverArt(pal.art, inkCol, false)}</div>`;
   } else if (pal.art === 'grid') {
-    artHTML = `<div class="cv-art" style="top:58%;height:30%;opacity:${b.finished ? 0.55 : 0.8}">${coverArt(pal.art, inkCol, false)}</div>`;
+    // 线稿网络：横排书名下方大面积铺开（参考图：经济学原理）
+    const gridTop = vert ? '54%' : '42%';
+    artHTML = `<div class="cv-art" style="top:${gridTop};height:40%;opacity:${b.finished ? 0.55 : 0.85}">${coverArt(pal.art, inkCol, false)}</div>`;
   } else if (pal.art === 'scroll') {
     artHTML = `<div class="cv-art" style="top:58%;height:26%;opacity:${b.finished ? 0.55 : 0.75}">${coverArt(pal.art, inkCol, false)}</div>`;
   }
 
   // 竖排书名：道德经这类需偏右（因为左侧有太极）；其余居中
   const vertShift = pal.art === 'taiji' ? 'right:14%;left:auto;transform:none' : 'left:50%;transform:translateX(-50%)';
+  // 竖排书名起点：参考图约从封面 22% 处起
+  const vertTop = '21%';
+  // 横排书名垂直位置：参考图约在封面 24%~30% 处（印章下方留白）
+  const horizTop = (b.author && b.author !== '佚名') ? '23%' : '26%';
 
   return `
-    <div class="book-cover mx-auto relative cv-cloth" style="background:${bgCss};height:${h}px;width:${Math.round(h * 2 / 3)}px">
+    <div class="book-cover relative cv-cloth" style="background:${bgCss};width:100%;aspect-ratio:2/3;container-type:inline-size">
       ${artHTML}
       <div class="cv-line" style="border-color:${lineCol}"></div>
       <div class="cv-seal" style="background:${decoBg};color:${inkCol};box-shadow:inset 0 0 0 1px ${lineCol};opacity:0.9">${nameChars[0]}</div>
       <span class="cv-dot" style="right:13%;background:${decoBg};box-shadow:inset 0 0 0 1px ${lineCol}"></span>
 
       ${vert
-        ? `<div style="position:absolute;${vertShift};top:22%;display:flex;flex-direction:row;align-items:flex-start;z-index:4;color:${inkCol}">
-             <span class="cv-name" style="font-size:${nameSize}px;writing-mode:vertical-rl;text-orientation:upright">${b.name}</span>
+        ? `<div style="position:absolute;${vertShift};top:${vertTop};display:flex;flex-direction:row;align-items:flex-start;z-index:4;color:${inkCol}">
+             <span class="cv-name" style="font-size:${nameSize};writing-mode:vertical-rl;text-orientation:upright">${b.name}</span>
              ${b.author && b.author !== '佚名'
-               ? `<span class="cv-by" style="font-size:7px;writing-mode:vertical-rl;text-orientation:upright;margin-left:6px;align-self:flex-end;white-space:nowrap">${b.author}</span>`
+               ? `<span class="cv-by" style="font-size:6.5cqw;writing-mode:vertical-rl;text-orientation:upright;margin-left:5cqw;align-self:flex-end;white-space:nowrap">${b.author}</span>`
                : ''}
            </div>`
-        : `<div style="position:absolute;left:50%;transform:translateX(-50%);top:${b.author && b.author !== '佚名' ? '13%' : '20%'};width:72%;text-align:center;color:${inkCol};z-index:4">
-             <p class="cv-name" style="font-size:${nameSize}px;letter-spacing:0.06em">${b.name}</p>
-             ${b.author && b.author !== '佚名' ? `<p class="cv-by" style="font-size:7px;margin-top:5px">${b.author}</p>` : ''}
+        : `<div style="position:absolute;left:50%;transform:translateX(-50%);top:${horizTop};width:86%;text-align:center;color:${inkCol};z-index:4">
+             <p class="cv-name" style="font-size:${nameSize};letter-spacing:0.02em;line-height:1.05">${b.name}</p>
+             ${b.author && b.author !== '佚名' ? `<p class="cv-by" style="font-size:6cqw;margin-top:3.5cqw">${b.author}</p>` : ''}
            </div>`}
 
       <span class="cv-cloud" style="color:${inkCol}">${coverArt('cloud', inkCol, true)}</span>
@@ -995,7 +1008,7 @@ function bookCoverHTML(b, h, n) {
       <span class="absolute left-0 right-0 bottom-0 h-[3px]" style="background:rgba(0,0,0,0.16)"></span>
       ${b.finished
         ? `<span class="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 rounded-sm font-bold tracking-[0.15em] z-20"
-             style="background:rgba(255,255,255,0.88);color:#3a2b22">读 完</span>`
+             style="background:rgba(255,255,255,0.88);color:#3a2b22;font-size:7cqw">读 完</span>`
         : ''}
     </div>`;
 }
@@ -1030,21 +1043,20 @@ function renderShelf() {
           <span class="text-[11px] text-inklight num-badge mb-0.5">${books.length} books</span>
         </div>
         ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
-        <!-- 一层书架：封面统一尺寸并排 -->
-        <div class="relative px-1">
-          <div class="flex items-end justify-start gap-4 flex-wrap min-h-[200px] pb-1">
+        <!-- 一层书架：一排固定 3 本（参考图密度），封面自适应 -->
+        <div class="relative">
+          <div class="grid grid-cols-3 gap-x-3 gap-y-5 justify-items-center pb-1">
             ${books.map(b => {
               const n = data.quotes.filter(q => q.bookId === b.id).length;
-              const h = 192;   // 统一高度：系列封面尺寸一致
               return `
               <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
                 onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
                 ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
-                class="active:scale-95 transition-transform" style="width:128px">
-                ${bookCoverHTML(b, h, n)}
-                <div class="mt-2 text-center">
-                  <p class="text-[11px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
-                  <p class="text-[10px] text-cinnabar font-bold num-badge mt-0.5">${n} 摘</p>
+                class="active:scale-95 transition-transform w-full">
+                ${bookCoverHTML(b, 168, n)}
+                <div class="mt-1.5 text-center">
+                  <p class="text-[10.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
+                  <p class="text-[9.5px] text-cinnabar font-bold num-badge mt-px">${n} 摘</p>
                 </div>
               </button>`;
             }).join('')}
