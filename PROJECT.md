@@ -79,6 +79,7 @@ git add -A && git commit -m "余录 vX.X：改动说明" && git push origin main
 - **v1.5.3**：「评论」分类底图重绘——古人谈古论今（四色长袍）+ 亭台园林背景 + 上方蓝天白云，明亮重彩风对齐「经济」底图色调（ImageGen 生成，裁掉水印后 600×800）；`comment.jpg?v=3` + SW `yulu-v42`
 - **v1.5.4**：评论底图饱和度下调至 72%（用户反馈太艳；构图不动，PIL ImageEnhance.Color 处理）；`comment.jpg?v=4` + SW `yulu-v43`。生成原图 PNG 留在 /tmp 会丢，调色基准以 git 历史里的 v3 版为准
 - **v1.5.5**：评论底图终版——饱和度再降至 55%，左上角山体用右侧天空镜像羽化补绘擦除（PIL paste+GaussianBlur mask，零积分）；`comment.jpg?v=5` + SW `yulu-v44`
+- **v1.5.6**：评论底图重生成——用户反馈 v1.5.5 左侧山没擦干净；img2img 接口 403 不可用，改为文生图重绘（提示词明确"无大山+天空占半幅+四色长袍围坐"），PIL 擦除左缘远山残影+裁水印，色调天然柔和；`comment.jpg?v=6` + SW `yulu-v45`
 
 ## 待办 / 备忘
 
