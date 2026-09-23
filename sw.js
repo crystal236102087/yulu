@@ -1,5 +1,5 @@
 /* 余录 · Service Worker —— 离线缓存 + PWA 安装支持 */
-const CACHE = 'yulu-v46';
+const CACHE = 'yulu-v47';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const APP_SHELL = [
   './icon-512.png',
   './art/book.jpg?v=2',
   './art/film.jpg?v=3',
-  './art/comment.jpg?v=7',
+  './art/comment.jpg?v=8',
   './art/econ.jpg?v=14',
   './art/essay.jpg?v=3'
 ];
