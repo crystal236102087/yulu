@@ -567,11 +567,27 @@ function normalizeData(d) {
   if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(defaultData));
   const books = Array.isArray(d.books) ? d.books : [];
   const quotes = Array.isArray(d.quotes) ? d.quotes.map(q => ({ ...q, channel: q.channel || '书本' })) : [];
+  // 数据修复 v1.5.2：历史自动上架的书若把作者粘进了书名（如「梦溪笔谈沈括」）且作者为空 → 拆开
+  normalizeData.repaired = false;
+  books.forEach(b => {
+    if (!b.author || b.author === '佚名') {
+      const p = parseSource(b.name);
+      if (p.author && p.title && p.title !== b.name) {
+        b.name = p.title; b.author = p.author;
+        normalizeData.repaired = true;
+      }
+    }
+  });
   // 数据修复：书本渠道的老摘录若没挂靠 bookId，按出处到已有书架里补挂（不新建书，避免旧数据撑爆书架）
   quotes.forEach(q => {
     if (q.channel === '书本' && !q.bookId && q.source && q.source !== '未注明出处') {
-      const bare = q.source.replace(/[《》]/g, '').replace(/[—－-]{1,2}.*$/, '').replace(/[（(]?第[一二三四五六七八九十\d]+[部册卷篇][）)]?$/, '').trim();
-      const hit = bare && books.find(b => b.name === bare || bare.startsWith(b.name) || b.name.startsWith(bare));
+      // v1.5.2：优先按拆出的书名精确匹配，再退回旧的模糊匹配
+      const ps = parseSource(q.source);
+      let hit = ps.title && books.find(b => b.name === ps.title);
+      if (!hit) {
+        const bare = q.source.replace(/[《》]/g, '').replace(/[—－-]{1,2}.*$/, '').replace(/[（(]?第[一二三四五六七八九十\d]+[部册卷篇][）)]?$/, '').trim();
+        hit = bare && books.find(b => b.name === bare || bare.startsWith(b.name) || b.name.startsWith(bare));
+      }
       if (hit) q.bookId = hit.id;
     }
   });
@@ -583,7 +599,12 @@ function loadData() {
     try { localStorage.setItem(STORE_KEY, localStorage.getItem(OLD_STORE_KEY)); } catch (e) {}
   }
   const saved = localStorage.getItem(STORE_KEY);
-  if (saved) { try { data = normalizeData(JSON.parse(saved)); } catch (e) {} }
+  if (saved) {
+    try {
+      data = normalizeData(JSON.parse(saved));
+      if (normalizeData.repaired) saveData(); // 拆错了的历史书名已修复 → 立即落盘并同步到云端
+    } catch (e) {}
+  }
 }
 function saveData() {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
@@ -1836,26 +1857,63 @@ function bookPressEnd() { clearTimeout(bookPressTimer); }
 
 /* 出处书名 → 书架书 id：先模糊匹配已有书；匹配不到就自动上架一本新书（默认「待归类」）。
    返回 { id, created } —— created 为新建的书名（若新建），供保存后提示用。 */
+/* 出处拆解：区分书名和作者（v1.5.2）
+   《梦溪笔谈》沈括 → {title:'梦溪笔谈', author:'沈括'}
+   《梦溪笔谈》·沈括 / 梦溪笔谈（沈括）/ 梦溪笔谈——沈括 → 同上
+   梦溪笔谈沈括（无分隔粘连）→ 知名作者词典兜底拆分
+   《孟子》梁惠王上 / 论语·学而 → 篇章名不算作者，author 留空 */
+function parseSource(srcText) {
+  let s = (srcText || '').trim();
+  if (!s) return { title: '', author: '' };
+  const CHAPTERISH = /^(第\s*[一二三四五六七八九十百千\d]+\s*[篇章回卷节]|[上下]|[篇章回卷节]\s*\d*|序|前言|后记|附录|节选|选读|导言|楔子)/;
+  const PIAN_NAMES = /^(学而|为政|八佾|里仁|公冶长|雍也|述而|泰伯|子罕|乡党|先进|颜渊|子路|宪问|卫灵公|季氏|阳货|微子|子张|尧曰|梁惠王|公孙丑|滕文公|离娄|万章|告子|尽心|逍遥游|齐物论|养生主|人间世|德充符|大宗师|应帝王)/;
+  const clean = (t) => t.replace(/^[（(]|[）)]$/g, '').trim();
+  const junkAuthor = (a) => !a || CHAPTERISH.test(a) || PIAN_NAMES.test(a);
+  let m;
+  // 1)《书名》+ 后缀作者
+  m = s.match(/^《([^》]+)》\s*(.*)$/);
+  if (m) {
+    const a = clean(m[2]).replace(/^[·•・:：\-—–]\s*/, '');
+    return { title: m[1].trim(), author: (junkAuthor(a) || a.length > 12) ? '' : a };
+  }
+  // 2) 无书名号：书名·作者 / 书名——作者 / 书名（作者）
+  m = s.match(/^(.+?)\s*[·•・]\s*(.+)$/);
+  if (m) { const a = clean(m[2]); return { title: m[1].trim(), author: junkAuthor(a) ? '' : a }; }
+  m = s.match(/^(.+?)\s*[—－–-]{1,2}\s*(.+)$/);
+  if (m) { const a = clean(m[2]); return { title: m[1].trim(), author: junkAuthor(a) ? '' : a }; }
+  m = s.match(/^(.+?)\s*[（(]([^（）()]+)[）)]\s*$/);
+  if (m) return { title: m[1].trim(), author: m[2].trim() };
+  // 3) 无分隔粘连（梦溪笔谈沈括）：知名作者词典兜底，书名剩余须 ≥2 字（防「孟子」被拆空）
+  const FAMOUS = ['沈括','老子','庄子','列子','孔子','孟子','荀子','墨子','韩非','孙武','司马迁','司马光','班固','范晔','陈寿','曹雪芹','罗贯中','施耐庵','吴承恩','蒲松龄','苏轼','欧阳修','王安石','韩愈','柳宗元','朱熹','王阳明','曾国藩','纪晓岚','袁枚','沈复','张潮','赵蕤','李清照','辛弃疾','李白','杜甫','白居易','陶渊明','屈原','宋应星','徐霞客','李时珍','贾思勰','郦道元','刘义庆','干宝','左丘明','吕不韦','刘向','许慎','陆羽','张仲景','孙思邈'];
+  for (const a of FAMOUS) {
+    if (s.length > a.length + 1 && s.endsWith(a)) return { title: s.slice(0, s.length - a.length), author: a };
+  }
+  return { title: s, author: '' };
+}
+
 let autoCreatedBook = null;
 function matchOrCreateBook(srcText) {
   autoCreatedBook = null;
   if (!srcText) return null;
-  // 归一化：去书名号、去作者破折号，取出书名主体
-  const bare = srcText.replace(/[《》]/g, '').replace(/[—－-]{1,2}.*$/, '').trim();
+  // v1.5.2：先拆书名和作者，再匹配/上架
+  const { title, author } = parseSource(srcText);
+  const bare = (title || '').trim();
   if (!bare) return null;
-  // 1) 精确 / 前缀匹配已有书
+  // 补作者小工具：命中的书没有作者而出处带了作者 → 顺手补上
+  const fillAuthor = (b) => { if (author && (!b.author || b.author === '佚名')) b.author = author; };
+  // 1) 精确 / 前缀匹配已有书（前缀匹配同时兼容历史粘连名）
   const hit = data.books.find(b => b.name === bare || bare.startsWith(b.name) || b.name.startsWith(bare));
-  if (hit) return hit.id;
-  // 2) 自动上架：书名取 bare，去掉「第一部 / 上册」这类册次后缀
+  if (hit) { fillAuthor(hit); return hit.id; }
+  // 2) 自动上架：书名取拆好的 title，去掉「第一部 / 上册」这类册次后缀
   const bookName = bare.replace(/[（(]?第[一二三四五六七八九十\d]+[部册卷篇][）)]?$/, '').trim() || bare;
   // 二次确认：去掉册次后可能又能匹配上
   const hit2 = data.books.find(b => b.name === bookName);
-  if (hit2) return hit2.id;
-  // 3) 新建书：用书架上用得最少的颜色，分类「待归类」
+  if (hit2) { fillAuthor(hit2); return hit2.id; }
+  // 3) 新建书：书名/作者分开存，颜色用书架上用得最少的，分类「待归类」
   const use = {};
   data.books.forEach(b => { use[b.color] = (use[b.color] || 0) + 1; });
   const color = [...BOOK_COLORS].sort((a, b) => (use[a] || 0) - (use[b] || 0))[0];
-  const nb = { id: 'b' + Date.now(), name: bookName, author: '', category: '待归类', color, finished: false, finishDate: '' };
+  const nb = { id: 'b' + Date.now(), name: bookName, author: author || '', category: '待归类', color, finished: false, finishDate: '' };
   data.books.push(nb);
   autoCreatedBook = bookName;
   return nb.id;
