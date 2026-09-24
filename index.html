@@ -82,22 +82,36 @@
     }
     .corner-deco { position:absolute; width:14px; height:14px; border-color: rgba(166,58,43,0.4); }
     .v-text { writing-mode: vertical-rl; letter-spacing: 0.28em; }
-    /* 书目目录：条目序号（印章式小方块，颜色随书封） */
-    .catalog-no {
-      width: 27px; height: 27px; border-radius: 7px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 900; letter-spacing: 0;
-      border: 1.5px solid; font-family: 'Kaiti SC', 'STKaiti', serif;
-      margin-top: 2px;
+    /* ===== 书本阅读：纸页 + 3D 翻页 ===== */
+    .reader-page {
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, #f3ebd6 0%, #faf5e5 10%, #fdf9ee 50%, #faf5e5 90%, #ece2c8 100%);
+      border-radius: 10px 4px 4px 10px;
+      box-shadow: 0 18px 44px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(120,100,60,0.16), inset 3px 0 10px -6px rgba(90,70,40,0.55);
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    /* 目录翻页页脚 */
-    .catalog-pager-btn {
-      padding: 7px 16px; border-radius: 9999px; font-size: 12px; font-weight: 900;
-      letter-spacing: 0.15em; background: #f2ecdd; border: 1px solid #e2d9c3;
-      color: #5a5248; transition: transform .1s;
+    .reader-page-head {
+      padding: 13px 18px 0; display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 9.5px; color: #a09478; letter-spacing: 0.18em; flex-shrink: 0;
     }
-    .catalog-pager-btn:active { transform: scale(0.94); }
-    .catalog-pager-btn[disabled] { opacity: 0.35; pointer-events: none; }
+    .reader-page-body { flex: 1; overflow-y: auto; padding: 13px 20px 8px; }
+    .reader-page-foot {
+      padding: 0 18px 11px; text-align: center; flex-shrink: 0;
+      font-size: 9.5px; color: #b3a686; letter-spacing: 0.3em;
+    }
+    .reader-tap { position: absolute; top: 0; bottom: 0; width: 36px; z-index: 25; cursor: pointer; }
+    .flip-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    @keyframes readerFlipOut { 0% { transform: rotateY(0); opacity: 1; } 100% { transform: rotateY(-165deg); opacity: 0; } }
+    @keyframes readerFlipIn  { 0% { transform: rotateY(-165deg); opacity: 0; } 12% { opacity: 1; } 100% { transform: rotateY(0); opacity: 1; } }
+    #reader-flip.reader-anim-next { display: block; animation: readerFlipOut .5s cubic-bezier(.42,.05,.4,1) forwards; }
+    #reader-flip.reader-anim-prev { display: block; animation: readerFlipIn .5s cubic-bezier(.42,.05,.4,1) forwards; }
+    .reader-nav-btn {
+      width: 38px; height: 38px; border-radius: 9999px; font-size: 16px; font-weight: 900;
+      color: #e8ddc4; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,246,236,0.22);
+      transition: transform .1s;
+    }
+    .reader-nav-btn:active { transform: scale(0.92); }
+    .reader-nav-btn[disabled] { opacity: 0.28; pointer-events: none; }
     /* 书脊立体感 */
     .book-spine {
       border-radius: 3px 6px 6px 3px;
@@ -160,19 +174,18 @@
     .cv-mesh {            /* 满铺网格底纹层（z 最低，位于布纹之上） */
       position: absolute; inset: 0; z-index: 0; pointer-events: none;
     }
-    .cv-seal {            /* 框内顶部居中方形印章（描边 + 单字） */
+    .cv-seal {            /* 框内顶部居中方形印章（描边 + 单字；固定 px，不依赖 cqw，避免 iOS 容器单位解析差异） */
       position: absolute; left: 50%; transform: translateX(-50%); top: 8%;
-      width: 19cqw; height: 19cqw; max-width: 24px; max-height: 24px;
+      width: 17px; height: 17px;
       border-radius: 1.5px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 9cqw; font-weight: 700; line-height: 1;
+      font-size: 8.5px; font-weight: 700; line-height: 1;
       letter-spacing: 0; z-index: 4;
       background: rgba(255,255,255,0.16);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.30);
     }
     .cv-dot {             /* 右上角装饰小方点 */
-      position: absolute; top: 8.5%; width: 5.5cqw; height: 5.5cqw;
-      max-width: 7px; max-height: 7px;
+      position: absolute; top: 8.5%; width: 4.5px; height: 4.5px;
       border-radius: 1px; z-index: 4;
       background: rgba(122,60,48,0.55);
     }
@@ -185,11 +198,11 @@
       font-family: "Songti SC", "STSong", "SimSun", serif;
       letter-spacing: 0.3em; opacity: 0.9;
     }
-    .cv-bar {             /* 框内底部信息名牌：窄米色牌 + 细金边（随封面缩放） */
+    .cv-bar {             /* 框内底部信息名牌：窄米色牌 + 细金边（固定 px，不依赖 cqw） */
       position: absolute; left: 18%; right: 18%; bottom: 4.5%;
-      height: 8cqw; max-height: 16px;
+      height: 13px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 5.6cqw; font-weight: 700; letter-spacing: 0.1em; text-indent: 0.1em;
+      font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; text-indent: 0.1em;
       border-radius: 2px; z-index: 5;
       border: 0.8px solid rgba(196,168,110,0.75);
       background: linear-gradient(180deg, #fdfbf3, #f4ecd6);
@@ -403,21 +416,42 @@
       </div>
     </div>
 
-    <!-- 书目目录弹窗（点击书架上的书打开；DOM 放在 detail-modal 之前，详情弹出时盖在目录上，关详情回目录） -->
-    <div id="catalog-modal" class="hidden absolute inset-0 z-50">
-      <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeCatalog()"></div>
-      <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[92%] overflow-y-auto slide-up border-t-2 border-cinnabar/30">
-        <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div id="catalog-book-seal" class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 shadow-sm"><span id="catalog-book-seal-char" class="text-white brand-title text-base leading-none">目</span></div>
-            <div class="min-w-0">
-              <h3 id="catalog-title" class="font-black text-lg tracking-wide truncate">目 录</h3>
-              <p id="catalog-sub" class="text-[10px] text-inklight num-badge mt-px"></p>
-            </div>
+    <!-- 书本阅读弹窗（点击书架上的书：翻开一本书，翻页看语录；DOM 在 detail-modal 之前，详情弹出时盖在书页上） -->
+    <div id="reader-modal" class="hidden absolute inset-0 z-50">
+      <div class="absolute inset-0" style="background:radial-gradient(130% 90% at 50% 28%, #43392d 0%, #2a231b 62%, #1a1510 100%)" onclick="closeReader()"></div>
+      <div class="absolute inset-x-0 top-0 px-5 pt-4 pb-2 flex items-center justify-between z-20">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div id="reader-seal" class="w-7 h-7 rounded-md flex items-center justify-center shrink-0"><span id="reader-seal-char" class="text-white font-black leading-none" style="font-size:14px;font-family:'Songti SC','STSong',serif">书</span></div>
+          <div class="min-w-0">
+            <h3 id="reader-title" class="font-black text-[14px] tracking-wide truncate" style="color:#f3ead6">书名</h3>
+            <p id="reader-sub" class="text-[9.5px] num-badge mt-px" style="color:#b0a48c"></p>
           </div>
-          <button onclick="closeCatalog()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold shrink-0">✕</button>
         </div>
-        <div id="catalog-body" class="px-6 py-4"></div>
+        <button onclick="closeReader()" class="w-9 h-9 rounded-full font-bold shrink-0" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,246,236,0.25);color:#e8ddc4">✕</button>
+      </div>
+      <div id="reader-stage-wrap" class="absolute inset-0 flex items-center justify-center px-5 z-10" style="padding-top:60px;padding-bottom:52px">
+        <div id="reader-stage" style="perspective:1600px">
+          <div id="reader-book" style="position:relative">
+            <div id="reader-page" class="reader-page">
+              <span class="corner-deco border-l-2 border-t-2" style="left:7px;top:7px"></span>
+              <span class="corner-deco border-r-2 border-b-2" style="right:7px;bottom:7px"></span>
+              <div id="reader-page-head" class="reader-page-head"></div>
+              <div id="reader-page-body" class="reader-page-body"></div>
+              <div id="reader-page-foot" class="reader-page-foot"></div>
+            </div>
+            <div id="reader-flip" style="position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;display:none;z-index:30">
+              <div id="flip-front" class="reader-page flip-face"></div>
+              <div id="flip-back" class="reader-page flip-face" style="transform:rotateY(180deg)"></div>
+            </div>
+            <div id="reader-tap-prev" class="reader-tap" style="left:0" onclick="readerGo(-1)"></div>
+            <div id="reader-tap-next" class="reader-tap" style="right:0" onclick="readerGo(1)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="absolute inset-x-0 bottom-0 pt-2 flex items-center justify-center gap-4 z-20" style="padding-bottom:max(14px,env(safe-area-inset-bottom))">
+        <button id="reader-btn-prev" onclick="readerGo(-1)" class="reader-nav-btn">‹</button>
+        <span id="reader-pos" class="num-badge font-bold" style="color:#cfc2a4;font-size:11px;letter-spacing:0.2em"></span>
+        <button id="reader-btn-next" onclick="readerGo(1)" class="reader-nav-btn">›</button>
       </div>
     </div>
 
@@ -672,10 +706,32 @@ function render() {
   const now = new Date();
   document.getElementById('header-date').textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}`;
   if (currentTab === 'quotes') renderDaily(); // 首页顶部今日卡片（异步数据到了就填）
-  if (catalogBookId) renderCatalog();         // 目录开着时（在详情里删/改了摘录）同步刷新目录
+  fixCoverCqw();                              // 书名字号 cqw→px（iOS 兼容）
+  if (readerBookId) {                         // 阅读中（在详情里删/改了摘录）→ 重建页面栈并同步当前页
+    const b = data.books.find(x => x.id === readerBookId);
+    if (b) { buildReaderStack(b); readerIdx = Math.min(readerIdx, readerStack.length - 1); renderReaderPage(); }
+  }
 }
 
 // ---------- 文摘页：首页=分类卡片，点击进入分类看文摘 ----------
+
+/* iOS 部分版本对容器查询单位 cqw 解析异常（书名字号会错乱、竖排换列错位）。
+   统一在渲染后按封面实测宽度把内联 cqw 换算成 px，彻底绕开该单位。 */
+function fixCoverCqw() {
+  document.querySelectorAll('.book-cover').forEach(cv => {
+    const w = cv.clientWidth;
+    if (!w) return;
+    cv.querySelectorAll('[style*="cqw"]').forEach(el => {
+      if (!el.dataset.cqwRaw) el.dataset.cqwRaw = el.getAttribute('style');
+      el.setAttribute('style', el.dataset.cqwRaw.replace(/(-?\d+(?:\.\d+)?)cqw/g, (_, n) => (parseFloat(n) * w / 100).toFixed(2) + 'px'));
+    });
+  });
+}
+let _cqwResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_cqwResizeTimer);
+  _cqwResizeTimer = setTimeout(() => { fixCoverCqw(); sizeReaderBook(); }, 150);
+});
 function renderQuotes() {
   // 分类首页：今日佳句 + 4 张分类卡片
   if (homeView === 'gallery') return renderGallery();
@@ -1332,7 +1388,7 @@ function setShelfView(v) {
 function shelfBookCell(b) {
   const n = data.quotes.filter(q => q.bookId === b.id).length;
   return `
-  <button onclick="if(!bookPressSuppressClick){openCatalog('${b.id}')}"
+  <button onclick="if(!bookPressSuppressClick){openReader('${b.id}')}"
     onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
     ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
     class="active:scale-95 transition-transform w-full">
@@ -1635,12 +1691,14 @@ document.getElementById('detail-edit').onclick = function(e) {
   openEditModal(currentDetailId);
 };
 
-// ==================== 书目目录（书架上点开一本书 → 该书语录目录，分页） ====================
-let catalogBookId = null;   // 当前目录对应的书
-let catalogPage = 1;        // 当前页码（从 1 起）
-const CATALOG_PER = 8;      // 每页条数
+// ==================== 书本阅读（书架上点开一本书 → 扉页/目录/语录逐页翻看） ====================
+let readerBookId = null;   // 当前阅读的书
+let readerStack = [];      // 页面栈：{type:'cover'} → {type:'toc'}(有摘录时) → {type:'quote',q}×N → {type:'end'}
+let readerIdx = 0;         // 当前页在栈中的下标
+let readerFlipping = false;
+let readerQuoteCount = 0;  // 该书摘录总数（顶栏/扉页用）
 
-// 阿拉伯数字 → 中文数字（目录序号/页码用；支持到 99，超出退回阿拉伯数字）
+// 阿拉伯数字 → 中文数字（页码用；支持到 99，超出退回阿拉伯数字）
 function numCN(n) {
   const D = '一二三四五六七八九';
   if (n <= 0) return String(n);
@@ -1651,79 +1709,187 @@ function numCN(n) {
   return String(n);
 }
 
-function openCatalog(bookId) {
+function openReader(bookId) {
   const b = data.books.find(x => x.id === bookId);
   if (!b) return;
-  catalogBookId = bookId;
-  catalogPage = 1;
-  const n = data.quotes.filter(q => q.bookId === b.id).length;
-  document.getElementById('catalog-title').textContent = b.name + (b.finished ? ' · 读完' : '');
-  document.getElementById('catalog-sub').textContent = (b.author ? b.author + ' · ' : '') + '共 ' + n + ' 摘';
-  document.getElementById('catalog-book-seal').style.background = b.color || '#8e3b2c';
-  document.getElementById('catalog-book-seal-char').textContent = (b.name || '书').trim().slice(-1);
-  renderCatalog();
-  document.getElementById('catalog-modal').classList.remove('hidden');
+  readerBookId = bookId;
+  buildReaderStack(b);
+  readerIdx = 0;
+  document.getElementById('reader-title').textContent = b.name + (b.finished ? ' · 读完' : '');
+  document.getElementById('reader-sub').textContent = (b.author ? b.author + ' · ' : '') + '共 ' + readerQuoteCount + ' 摘';
+  document.getElementById('reader-seal').style.background = b.color || '#8e3b2c';
+  document.getElementById('reader-seal-char').textContent = (b.name || '书').trim().slice(-1);
+  document.getElementById('reader-modal').classList.remove('hidden');
+  sizeReaderBook();
+  renderReaderPage();
 }
-function closeCatalog() {
-  document.getElementById('catalog-modal').classList.add('hidden');
-  catalogBookId = null;
+function closeReader() {
+  document.getElementById('reader-modal').classList.add('hidden');
+  readerBookId = null;
 }
-function setCatalogPage(p) {
-  catalogPage = p;
-  renderCatalog();
-  const box = document.querySelector('#catalog-modal .overflow-y-auto');
-  if (box) box.scrollTop = 0;
+function buildReaderStack(b) {
+  const quotes = data.quotes.filter(q => q.bookId === b.id);   // 与文摘页同序（新的在前）
+  readerQuoteCount = quotes.length;
+  readerStack = [{ type: 'cover' }];
+  if (quotes.length) readerStack.push({ type: 'toc', quotes });
+  quotes.forEach(q => readerStack.push({ type: 'quote', q }));
+  readerStack.push({ type: 'end' });
 }
-function renderCatalog() {
-  if (!catalogBookId) return;
-  const b = data.books.find(x => x.id === catalogBookId);
-  if (!b) { closeCatalog(); return; }
-  const quotes = data.quotes.filter(q => q.bookId === b.id);   // 沿用数组原序（新的在前，与文摘页一致）
-  const body = document.getElementById('catalog-body');
-  if (quotes.length === 0) {
-    body.innerHTML = `
-      <div class="text-center py-16 text-inklight fade-in">
-        <div class="brush-title text-6xl opacity-25 mb-3">目</div>
-        <p class="text-sm font-bold">这本还没有摘录</p>
-        <p class="text-xs mt-1.5 opacity-60 tracking-widest">摘录时把出处写成这本书，就会收进它的目录</p>
-      </div>`;
-    return;
-  }
-  const total = Math.ceil(quotes.length / CATALOG_PER);
-  catalogPage = Math.min(Math.max(1, catalogPage), total);
-  const start = (catalogPage - 1) * CATALOG_PER;
-  const rows = quotes.slice(start, start + CATALOG_PER).map((q, i) => {
-    const no = numCN(start + i + 1);
-    const firstLine = (q.original || '').split('\n')[0].trim();
-    const text = firstLine.length > 26 ? firstLine.slice(0, 26) + '……' : firstLine;
-    const tags = [q.understanding ? '有理解' : '', q.example ? '有举例' : '', q.note ? '有注意' : ''].filter(Boolean).join(' · ');
-    return `
-      <div class="flex items-start gap-3 py-3.5 border-b border-dashed border-line cursor-pointer fade-in active:opacity-60 transition-opacity" onclick="openDetail('${q.id}')">
-        <span class="catalog-no" style="color:${b.color || '#8e3b2c'};border-color:${b.color || '#8e3b2c'}55;background:${b.color || '#8e3b2c'}0d">${no}</span>
-        <div class="min-w-0 flex-1">
-          <p class="text-[14.5px] leading-[1.85] font-bold text-ink">${text}</p>
-          <p class="text-[10px] text-inklight num-badge mt-1">${fmtDate(q.createdAt)}${tags ? ' · ' + tags : ''}</p>
+/* 书页尺寸：按可用空间计算，页面比例约 3:4 */
+function sizeReaderBook() {
+  const wrap = document.getElementById('reader-stage-wrap');
+  if (!wrap) return;
+  const availH = wrap.clientHeight - 6;
+  const availW = wrap.clientWidth - 6;
+  if (availH <= 0 || availW <= 0) return;   // 弹窗隐藏时量不到尺寸，跳过
+  let h = availH, w = h * 0.72;
+  if (w > availW) { w = availW; h = w / 0.72; }
+  const book = document.getElementById('reader-book');
+  book.style.width = w.toFixed(0) + 'px';
+  book.style.height = h.toFixed(0) + 'px';
+}
+/* 单页内容：返回 {head, body, foot} 三段 HTML */
+function readerPageHTML(item, b, idx) {
+  if (item.type === 'cover') {
+    const body = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+        <div style="width:56px;height:56px;border-radius:11px;background:${b.color || '#8e3b2c'};display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px ${b.color || '#8e3b2c'}55, inset 0 0 0 1.5px rgba(255,246,236,0.4)">
+          <span style="color:#fdf8ef;font-size:28px;font-weight:900;font-family:'Songti SC','STSong',serif">${(b.name || '书').trim().slice(-1)}</span>
         </div>
-        <span class="text-[10px] font-bold shrink-0 mt-2" style="color:${b.color || '#8e3b2c'};opacity:.75">详 注 ›</span>
+        <p class="v-text" style="font-size:26px;font-weight:900;color:#3a3226;font-family:'Songti SC','STSong',serif;letter-spacing:0.25em;margin-top:2px">${b.name}</p>
+        ${b.author ? `<p style="font-size:11px;color:#8d8066;letter-spacing:0.35em">${b.author}</p>` : ''}
+        <p style="font-size:9.5px;color:#b3a686;letter-spacing:0.28em;margin-top:8px">— 共 ${readerQuoteCount} 摘 · 翻页阅读 —</p>
       </div>`;
-  }).join('');
-  body.innerHTML = `
-    <div class="mb-1 flex items-baseline gap-2">
-      <span class="w-[3px] h-3.5 rounded-full shrink-0" style="background:${b.color || '#8e3b2c'}"></span>
-      <p class="text-[11px] font-bold tracking-[0.25em]" style="color:${b.color || '#8e3b2c'}">目 录</p>
-      <span class="text-[10px] text-inklight num-badge">${quotes.length} 条</span>
-      <div class="flex-1 h-px bg-line"></div>
-    </div>
-    ${rows}
-    ${total > 1 ? `
-    <div class="flex items-center justify-center gap-3 pt-5 pb-2">
-      <button class="catalog-pager-btn" ${catalogPage <= 1 ? 'disabled' : ''} onclick="setCatalogPage(${catalogPage - 1})">‹ 上一页</button>
-      <span class="text-[11px] text-inklight font-bold num-badge tracking-widest">第 ${numCN(catalogPage)} 页 · 共 ${numCN(total)} 页</span>
-      <button class="catalog-pager-btn" ${catalogPage >= total ? 'disabled' : ''} onclick="setCatalogPage(${catalogPage + 1})">下一页 ›</button>
-    </div>` : `
-    <p class="text-center text-[10px] text-inklight tracking-[0.35em] pt-4 pb-1 opacity-55">— 全 卷 终 —</p>`}
-  `;
+    return { head: '', body, foot: '' };
+  }
+  if (item.type === 'end') {
+    const body = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+        <span style="width:34px;height:1px;background:#c9bb98"></span>
+        <p style="font-size:19px;font-weight:900;color:#6b5f48;font-family:'Songti SC','STSong',serif;letter-spacing:0.5em;text-indent:0.5em">全 卷 终</p>
+        <span style="width:34px;height:1px;background:#c9bb98"></span>
+        <p style="font-size:9.5px;color:#b3a686;letter-spacing:0.25em;margin-top:6px">${b.name} · ${readerQuoteCount} 摘</p>
+      </div>`;
+    return { head: '', body, foot: '' };
+  }
+  if (item.type === 'toc') {
+    const rows = item.quotes.map((q, i) => {
+      const first = (q.original || '').split('\n')[0].trim();
+      const t = first.length > 14 ? first.slice(0, 14) + '…' : first;
+      return `
+        <div class="flex items-start gap-2.5 py-2 cursor-pointer active:opacity-60" style="border-bottom:1px dashed #ddd2b6" onclick="readerJumpTo(${2 + i})">
+          <span style="flex-shrink:0;width:20px;height:20px;border-radius:5px;border:1.2px solid ${b.color || '#8e3b2c'}55;color:${b.color || '#8e3b2c'};font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:'Songti SC','STSong',serif;margin-top:1px">${numCN(i + 1)}</span>
+          <p class="flex-1" style="font-size:11.5px;line-height:1.7;font-weight:700;color:#4a4234">${t}</p>
+        </div>`;
+    }).join('');
+    return {
+      head: `<span>目 录</span><span>共 ${item.quotes.length} 条</span>`,
+      body: `<div class="mb-2"><p style="font-size:16px;font-weight:900;color:#3a3226;font-family:'Songti SC','STSong',serif;letter-spacing:0.35em;text-align:center">目 录</p></div>${rows}`,
+      foot: '点 条 目 直 达'
+    };
+  }
+  // 语录页
+  const q = item.q;
+  const qc = b.color || '#8e3b2c';
+  const block = (label, text) => text ? `
+    <div style="margin-top:14px;padding-left:11px;position:relative">
+      <div style="position:absolute;left:0;top:2px;bottom:1px;width:2px;border-radius:2px;background:linear-gradient(180deg,${qc},${qc}22)"></div>
+      <span style="display:inline-block;background:${qc};color:#fdf8ef;font-size:8.5px;font-weight:900;padding:2px 7px;border-radius:4px;letter-spacing:0.2em;margin-bottom:5px">${label}</span>
+      <p style="font-size:11.5px;line-height:1.95;color:#5a5244;white-space:pre-wrap">${text}</p>
+    </div>` : '';
+  const pageNo = readerStack.slice(0, idx).filter(x => x.type === 'quote').length + 1;
+  const body = `
+    <p style="font-size:15px;line-height:2;font-weight:900;color:#33291c;white-space:pre-wrap">${q.original || ''}</p>
+    ${q.source ? `<p style="text-align:right;font-size:11px;color:#8d8066;margin-top:8px">—— ${q.source}</p>` : ''}
+    ${block('理 解', q.understanding)}
+    ${block('举 例', q.example)}
+    ${block('注 意', q.note)}
+    ${q.photo ? `<img src="${q.photo}" style="width:100%;border-radius:10px;margin-top:12px;border:1px solid #ddd2b6">` : ''}
+    ${(q.related && q.related.length) ? `
+      <div style="margin-top:14px;padding-top:10px;border-top:1px dashed #ddd2b6">
+        <p style="font-size:9px;color:#a09478;letter-spacing:0.2em;margin-bottom:6px">相似佳句 · ${q.related.length} 条</p>
+        ${q.related.map(r => `<p style="font-size:10.5px;line-height:1.8;color:#6b5f48;margin-bottom:4px">${r.type === 'English' ? '"' + r.text + '"' : r.text}${r.source ? ' <span style="color:#a09478">—— ' + r.source + '</span>' : ''}</p>`).join('')}
+      </div>` : ''}
+    <div style="height:6px"></div>
+    <p style="text-align:center;font-size:9px;color:#c2b695;letter-spacing:0.15em" onclick="openDetail('${q.id}')" class="cursor-pointer">详 注 ›</p>`;
+  return {
+    head: `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:62%">${b.name}</span><span style="flex-shrink:0">${fmtDate(q.createdAt)}</span>`,
+    body,
+    foot: `· ${numCN(pageNo)} ·`
+  };
 }
+/* 渲染当前页 + 底部指示 */
+function renderReaderPage() {
+  const b = data.books.find(x => x.id === readerBookId);
+  if (!b) { closeReader(); return; }
+  readerIdx = Math.min(Math.max(0, readerIdx), readerStack.length - 1);
+  const item = readerStack[readerIdx];
+  const h = readerPageHTML(item, b, readerIdx);
+  document.getElementById('reader-page-head').innerHTML = h.head;
+  document.getElementById('reader-page-body').innerHTML = h.body;
+  document.getElementById('reader-page-body').scrollTop = 0;
+  document.getElementById('reader-page-foot').innerHTML = h.foot;
+  const pos = document.getElementById('reader-pos');
+  if (item.type === 'cover') pos.textContent = '扉 页';
+  else if (item.type === 'toc') pos.textContent = '目 录';
+  else if (item.type === 'end') pos.textContent = '全 卷 终';
+  else pos.textContent = `第 ${numCN(readerStack.slice(0, readerIdx).filter(x => x.type === 'quote').length + 1)} 页 · 共 ${numCN(readerQuoteCount)} 页`;
+  document.getElementById('reader-btn-prev').disabled = readerIdx <= 0 || readerFlipping;
+  document.getElementById('reader-btn-next').disabled = readerIdx >= readerStack.length - 1 || readerFlipping;
+}
+function readerJumpTo(idx) { readerIdx = idx; renderReaderPage(); }
+/* 翻页：dir=1 下一页（当前页向左翻出），dir=-1 上一页（上一页翻回来盖上） */
+function readerGo(dir) {
+  if (readerFlipping) return;
+  const ni = readerIdx + dir;
+  if (ni < 0 || ni >= readerStack.length) return;
+  const b = data.books.find(x => x.id === readerBookId);
+  if (!b) return;
+  const flip = document.getElementById('reader-flip');
+  const ff = document.getElementById('flip-front');
+  const fb = document.getElementById('flip-back');
+  const pageEl = document.getElementById('reader-page');
+  readerFlipping = true;
+  const curH = readerPageHTML(readerStack[readerIdx], b, readerIdx);
+  const nextH = readerPageHTML(readerStack[ni], b, ni);
+  const pageHTML = h => `<div class="reader-page-head">${h.head}</div><div class="reader-page-body">${h.body}</div><div class="reader-page-foot">${h.foot}</div>`;
+  if (dir === 1) {
+    ff.innerHTML = pageHTML(curH); fb.innerHTML = pageHTML(curH);   // 翻出的是当前页
+    // 底页立即换成本页要露出/翻到的新页内容
+    document.getElementById('reader-page-head').innerHTML = nextH.head;
+    document.getElementById('reader-page-body').innerHTML = nextH.body;
+    document.getElementById('reader-page-body').scrollTop = 0;
+    document.getElementById('reader-page-foot').innerHTML = nextH.foot;
+    flip.className = 'reader-anim-next';
+  } else {
+    ff.innerHTML = pageHTML(nextH); fb.innerHTML = pageHTML(nextH); // 翻回来的是上一页
+    flip.className = 'reader-anim-prev';
+  }
+  setTimeout(() => {
+    readerIdx = ni;
+    const finalH = readerPageHTML(readerStack[readerIdx], b, readerIdx);
+    document.getElementById('reader-page-head').innerHTML = finalH.head;
+    document.getElementById('reader-page-body').innerHTML = finalH.body;
+    document.getElementById('reader-page-body').scrollTop = 0;
+    document.getElementById('reader-page-foot').innerHTML = finalH.foot;
+    flip.className = ''; flip.style.display = 'none';
+    readerFlipping = false;
+    renderReaderPage(); // 同步指示与按钮状态
+  }, 530);
+}
+/* 左右滑动翻页 */
+(function () {
+  let sx = 0, sy = 0;
+  document.addEventListener('touchstart', e => {
+    if (!readerBookId) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!readerBookId || readerFlipping) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) readerGo(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
 
 // ==================== 添加 / 编辑 ====================
 let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
