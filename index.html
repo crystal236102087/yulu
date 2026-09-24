@@ -82,6 +82,12 @@
     }
     .corner-deco { position:absolute; width:14px; height:14px; border-color: rgba(166,58,43,0.4); }
     .v-text { writing-mode: vertical-rl; letter-spacing: 0.28em; }
+    /* 书架网格：内置样式，不依赖 Tailwind CDN 加载时机（避免封面首次布局宽度错误） */
+    .shelf-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      column-gap: 8px; justify-items: center; padding-bottom: 4px;
+    }
+    .shelf-grid--cats { row-gap: 20px; }
     /* ===== 书本阅读：纸页 + 3D 翻页 ===== */
     .reader-page {
       position: absolute; inset: 0;
@@ -706,7 +712,7 @@ function render() {
   const now = new Date();
   document.getElementById('header-date').textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}`;
   if (currentTab === 'quotes') renderDaily(); // 首页顶部今日卡片（异步数据到了就填）
-  fixCoverCqw();                              // 书名字号 cqw→px（iOS 兼容）
+  watchCovers();                              // 书名字号 cqw→px（iOS 兼容，RO 自愈）
   if (readerBookId) {                         // 阅读中（在详情里删/改了摘录）→ 重建页面栈并同步当前页
     const b = data.books.find(x => x.id === readerBookId);
     if (b) { buildReaderStack(b); readerIdx = Math.min(readerIdx, readerStack.length - 1); renderReaderPage(); }
@@ -715,22 +721,34 @@ function render() {
 
 // ---------- 文摘页：首页=分类卡片，点击进入分类看文摘 ----------
 
-/* iOS 部分版本对容器查询单位 cqw 解析异常（书名字号会错乱、竖排换列错位）。
-   统一在渲染后按封面实测宽度把内联 cqw 换算成 px，彻底绕开该单位。 */
-function fixCoverCqw() {
+/* iOS 部分版本对容器查询单位 cqw 解析异常（书名字号错乱）。
+   渲染后按封面实测宽度把内联 cqw 换算成 px。
+   关键：用 ResizeObserver 监听封面——布局晚到（如 Tailwind CDN 慢，首次量到整屏宽）时
+   封面宽度一变就自动按新宽度重算，字号永不锁死在错误值。 */
+function applyCqw(cv) {
+  const w = cv.clientWidth;
+  if (!w) return;
+  cv.querySelectorAll('[style*="cqw"], [data-cqw-raw]').forEach(el => {
+    if (!el.dataset.cqwRaw) el.dataset.cqwRaw = el.getAttribute('style');
+    el.setAttribute('style', el.dataset.cqwRaw.replace(/(-?\d+(?:\.\d+)?)cqw/g, (_, n) => (parseFloat(n) * w / 100).toFixed(2) + 'px'));
+  });
+}
+let _coverRO = null;
+function watchCovers() {
   document.querySelectorAll('.book-cover').forEach(cv => {
-    const w = cv.clientWidth;
-    if (!w) return;
-    cv.querySelectorAll('[style*="cqw"]').forEach(el => {
-      if (!el.dataset.cqwRaw) el.dataset.cqwRaw = el.getAttribute('style');
-      el.setAttribute('style', el.dataset.cqwRaw.replace(/(-?\d+(?:\.\d+)?)cqw/g, (_, n) => (parseFloat(n) * w / 100).toFixed(2) + 'px'));
-    });
+    applyCqw(cv);
+    if (window.ResizeObserver) {
+      if (!_coverRO) _coverRO = new ResizeObserver(entries => {
+        entries.forEach(en => applyCqw(en.target));
+      });
+      _coverRO.observe(cv);
+    }
   });
 }
 let _cqwResizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(_cqwResizeTimer);
-  _cqwResizeTimer = setTimeout(() => { fixCoverCqw(); sizeReaderBook(); }, 150);
+  _cqwResizeTimer = setTimeout(() => { watchCovers(); sizeReaderBook(); }, 150);
 });
 function renderQuotes() {
   // 分类首页：今日佳句 + 4 张分类卡片
@@ -1391,7 +1409,7 @@ function shelfBookCell(b) {
   <button onclick="if(!bookPressSuppressClick){openReader('${b.id}')}"
     onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
     ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
-    class="active:scale-95 transition-transform w-full">
+    class="active:scale-95 transition-transform" style="width:100%">
     ${bookCoverHTML(b)}
     <div class="mt-1 text-center">
       <p class="text-[9.5px] font-bold truncate">${b.finished ? b.name + ' · 读完' : b.name}</p>
@@ -1423,7 +1441,7 @@ function renderShelf() {
       <div class="space-y-6">
       ${rows.map(row => `
         <div class="relative fade-in">
-          <div class="grid grid-cols-4 gap-x-2 justify-items-center pb-1">
+          <div class="shelf-grid">
             ${row.map(shelfBookCell).join('')}
           </div>
           <div class="shelf-board"></div>
@@ -1449,7 +1467,7 @@ function renderShelf() {
         </div>
         ${cat === '待归类' ? `<p class="-mt-2 mb-3 text-[11px] text-inklight tracking-wide">长按书脊可改分类 · 自动上架的就在这里</p>` : ''}
         <div class="relative">
-          <div class="grid grid-cols-4 gap-x-2 gap-y-5 justify-items-center pb-1">
+          <div class="shelf-grid shelf-grid--cats">
             ${books.map(shelfBookCell).join('')}
           </div>
           <div class="shelf-board"></div>
