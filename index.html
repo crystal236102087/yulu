@@ -82,6 +82,22 @@
     }
     .corner-deco { position:absolute; width:14px; height:14px; border-color: rgba(166,58,43,0.4); }
     .v-text { writing-mode: vertical-rl; letter-spacing: 0.28em; }
+    /* 书目目录：条目序号（印章式小方块，颜色随书封） */
+    .catalog-no {
+      width: 27px; height: 27px; border-radius: 7px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 900; letter-spacing: 0;
+      border: 1.5px solid; font-family: 'Kaiti SC', 'STKaiti', serif;
+      margin-top: 2px;
+    }
+    /* 目录翻页页脚 */
+    .catalog-pager-btn {
+      padding: 7px 16px; border-radius: 9999px; font-size: 12px; font-weight: 900;
+      letter-spacing: 0.15em; background: #f2ecdd; border: 1px solid #e2d9c3;
+      color: #5a5248; transition: transform .1s;
+    }
+    .catalog-pager-btn:active { transform: scale(0.94); }
+    .catalog-pager-btn[disabled] { opacity: 0.35; pointer-events: none; }
     /* 书脊立体感 */
     .book-spine {
       border-radius: 3px 6px 6px 3px;
@@ -387,6 +403,24 @@
       </div>
     </div>
 
+    <!-- 书目目录弹窗（点击书架上的书打开；DOM 放在 detail-modal 之前，详情弹出时盖在目录上，关详情回目录） -->
+    <div id="catalog-modal" class="hidden absolute inset-0 z-50">
+      <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeCatalog()"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-card rounded-t-[28px] max-h-[92%] overflow-y-auto slide-up border-t-2 border-cinnabar/30">
+        <div class="sticky top-0 bg-card/95 backdrop-blur px-6 pt-5 pb-4 border-b border-line flex items-center justify-between z-10">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="catalog-book-seal" class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 shadow-sm"><span id="catalog-book-seal-char" class="text-white brand-title text-base leading-none">目</span></div>
+            <div class="min-w-0">
+              <h3 id="catalog-title" class="font-black text-lg tracking-wide truncate">目 录</h3>
+              <p id="catalog-sub" class="text-[10px] text-inklight num-badge mt-px"></p>
+            </div>
+          </div>
+          <button onclick="closeCatalog()" class="w-9 h-9 rounded-full bg-paper border border-line text-inklight font-bold shrink-0">✕</button>
+        </div>
+        <div id="catalog-body" class="px-6 py-4"></div>
+      </div>
+    </div>
+
     <!-- 详情弹窗 -->
     <div id="detail-modal" class="hidden absolute inset-0 z-50">
       <div class="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onclick="closeDetail()"></div>
@@ -638,6 +672,7 @@ function render() {
   const now = new Date();
   document.getElementById('header-date').textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}`;
   if (currentTab === 'quotes') renderDaily(); // 首页顶部今日卡片（异步数据到了就填）
+  if (catalogBookId) renderCatalog();         // 目录开着时（在详情里删/改了摘录）同步刷新目录
 }
 
 // ---------- 文摘页：首页=分类卡片，点击进入分类看文摘 ----------
@@ -1297,7 +1332,7 @@ function setShelfView(v) {
 function shelfBookCell(b) {
   const n = data.quotes.filter(q => q.bookId === b.id).length;
   return `
-  <button onclick="if(!bookPressSuppressClick){filterBookId='${b.id}';switchTab('quotes')}"
+  <button onclick="if(!bookPressSuppressClick){openCatalog('${b.id}')}"
     onmousedown="bookPressStart('${b.id}')" onmouseup="bookPressEnd()" onmouseleave="bookPressEnd()"
     ontouchstart="bookPressStart('${b.id}')" ontouchend="bookPressEnd()" ontouchcancel="bookPressEnd()"
     class="active:scale-95 transition-transform w-full">
@@ -1599,6 +1634,96 @@ document.getElementById('detail-edit').onclick = function(e) {
   if (!currentDetailId) return;
   openEditModal(currentDetailId);
 };
+
+// ==================== 书目目录（书架上点开一本书 → 该书语录目录，分页） ====================
+let catalogBookId = null;   // 当前目录对应的书
+let catalogPage = 1;        // 当前页码（从 1 起）
+const CATALOG_PER = 8;      // 每页条数
+
+// 阿拉伯数字 → 中文数字（目录序号/页码用；支持到 99，超出退回阿拉伯数字）
+function numCN(n) {
+  const D = '一二三四五六七八九';
+  if (n <= 0) return String(n);
+  if (n < 10) return D[n - 1];
+  if (n === 10) return '十';
+  if (n < 20) return '十' + D[n - 11];
+  if (n < 100) return D[Math.floor(n / 10) - 1] + '十' + (n % 10 ? D[n % 10 - 1] : '');
+  return String(n);
+}
+
+function openCatalog(bookId) {
+  const b = data.books.find(x => x.id === bookId);
+  if (!b) return;
+  catalogBookId = bookId;
+  catalogPage = 1;
+  const n = data.quotes.filter(q => q.bookId === b.id).length;
+  document.getElementById('catalog-title').textContent = b.name + (b.finished ? ' · 读完' : '');
+  document.getElementById('catalog-sub').textContent = (b.author ? b.author + ' · ' : '') + '共 ' + n + ' 摘';
+  document.getElementById('catalog-book-seal').style.background = b.color || '#8e3b2c';
+  document.getElementById('catalog-book-seal-char').textContent = (b.name || '书').trim().slice(-1);
+  renderCatalog();
+  document.getElementById('catalog-modal').classList.remove('hidden');
+}
+function closeCatalog() {
+  document.getElementById('catalog-modal').classList.add('hidden');
+  catalogBookId = null;
+}
+function setCatalogPage(p) {
+  catalogPage = p;
+  renderCatalog();
+  const box = document.querySelector('#catalog-modal .overflow-y-auto');
+  if (box) box.scrollTop = 0;
+}
+function renderCatalog() {
+  if (!catalogBookId) return;
+  const b = data.books.find(x => x.id === catalogBookId);
+  if (!b) { closeCatalog(); return; }
+  const quotes = data.quotes.filter(q => q.bookId === b.id);   // 沿用数组原序（新的在前，与文摘页一致）
+  const body = document.getElementById('catalog-body');
+  if (quotes.length === 0) {
+    body.innerHTML = `
+      <div class="text-center py-16 text-inklight fade-in">
+        <div class="brush-title text-6xl opacity-25 mb-3">目</div>
+        <p class="text-sm font-bold">这本还没有摘录</p>
+        <p class="text-xs mt-1.5 opacity-60 tracking-widest">摘录时把出处写成这本书，就会收进它的目录</p>
+      </div>`;
+    return;
+  }
+  const total = Math.ceil(quotes.length / CATALOG_PER);
+  catalogPage = Math.min(Math.max(1, catalogPage), total);
+  const start = (catalogPage - 1) * CATALOG_PER;
+  const rows = quotes.slice(start, start + CATALOG_PER).map((q, i) => {
+    const no = numCN(start + i + 1);
+    const firstLine = (q.original || '').split('\n')[0].trim();
+    const text = firstLine.length > 26 ? firstLine.slice(0, 26) + '……' : firstLine;
+    const tags = [q.understanding ? '有理解' : '', q.example ? '有举例' : '', q.note ? '有注意' : ''].filter(Boolean).join(' · ');
+    return `
+      <div class="flex items-start gap-3 py-3.5 border-b border-dashed border-line cursor-pointer fade-in active:opacity-60 transition-opacity" onclick="openDetail('${q.id}')">
+        <span class="catalog-no" style="color:${b.color || '#8e3b2c'};border-color:${b.color || '#8e3b2c'}55;background:${b.color || '#8e3b2c'}0d">${no}</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[14.5px] leading-[1.85] font-bold text-ink">${text}</p>
+          <p class="text-[10px] text-inklight num-badge mt-1">${fmtDate(q.createdAt)}${tags ? ' · ' + tags : ''}</p>
+        </div>
+        <span class="text-[10px] font-bold shrink-0 mt-2" style="color:${b.color || '#8e3b2c'};opacity:.75">详 注 ›</span>
+      </div>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="mb-1 flex items-baseline gap-2">
+      <span class="w-[3px] h-3.5 rounded-full shrink-0" style="background:${b.color || '#8e3b2c'}"></span>
+      <p class="text-[11px] font-bold tracking-[0.25em]" style="color:${b.color || '#8e3b2c'}">目 录</p>
+      <span class="text-[10px] text-inklight num-badge">${quotes.length} 条</span>
+      <div class="flex-1 h-px bg-line"></div>
+    </div>
+    ${rows}
+    ${total > 1 ? `
+    <div class="flex items-center justify-center gap-3 pt-5 pb-2">
+      <button class="catalog-pager-btn" ${catalogPage <= 1 ? 'disabled' : ''} onclick="setCatalogPage(${catalogPage - 1})">‹ 上一页</button>
+      <span class="text-[11px] text-inklight font-bold num-badge tracking-widest">第 ${numCN(catalogPage)} 页 · 共 ${numCN(total)} 页</span>
+      <button class="catalog-pager-btn" ${catalogPage >= total ? 'disabled' : ''} onclick="setCatalogPage(${catalogPage + 1})">下一页 ›</button>
+    </div>` : `
+    <p class="text-center text-[10px] text-inklight tracking-[0.35em] pt-4 pb-1 opacity-55">— 全 卷 终 —</p>`}
+  `;
+}
 
 // ==================== 添加 / 编辑 ====================
 let pendingAutoSimilar = []; // 待并入的自动搜罗相似句（勾选项）
