@@ -48,17 +48,40 @@
 
 ## 发布流程（改完代码上线）
 
+工作区本身就是 git 仓库（`/workspace/yulu`、`/workspace/yaozihao-workbench`），remote 已配好推送通道：
+
 ```bash
-# 沙箱若是新环境，先克隆源码：
-# git clone https://github.com/crystal236102087/yulu
-cd /tmp/yulu-publish   # 或重新 git clone 到任意目录
-cp /workspace/reading-notes-app/index.html .
-# sw.js 有改动则同时 cp 并把 CACHE 升为 yulu-v6
+cd /workspace/yulu
 git add -A && git commit -m "余录 vX.X：改动说明" && git push origin main
-# remote URL 含 token：https://<TOKEN>@github.com/crystal236102087/yulu.git
+# remote 已含凭据，格式：
+# https://crystal236102087:<TOKEN>@ghfast.top/https://github.com/crystal236102087/yulu.git
 ```
 
-推送后约 1 分钟 GitHub Pages 生效，`curl https://crystal236102087.github.io/yulu/` 验证。
+- 推送后约 1 分钟 GitHub Pages 生效，`curl https://crystal236102087.github.io/yulu/` 验证
+- 改 index.html 不用动 sw.js；**改 sw.js 才升 CACHE 版本号**（当前 `yulu-v51`）
+- 沙箱若为全新环境：先 `git clone`，再按上面的格式重配 remote（token 向用户索取）
+
+## ⚠️ GitHub 访问教训（2026-09 token 风波）
+
+- **gh-proxy.com 的 API 查询有缓存污染**：同一 token 的 `/user` 查询先后返回过三个陌生账号，全是其他用户的缓存。**凡经 gh-proxy 的 API 身份查询一律不可信**
+- 权威验证只用 git 协议：`git ls-remote`、`git push --dry-run`
+- 推送镜像用 **ghfast.top**（gh-proxy 对部分 token 的 push 返回 403）
+- token 管理只能在网页：GitHub → Settings → Developer settings → Personal access tokens（API 无法列出/删除，是安全设计）；Regenerate 和 Delete 在同一详情页，别误触
+
+## 🔁 新会话核验（防蒙混机制，同 workbench 的 HANDOVER 设计）
+
+新会话声称读完本档案后，必须答对以下 6 道题才可继续；用户对照「答案速查表」验收，答错或含糊一律当作没读，要求重读。
+
+### 答案速查表（v1.7.1 状态，2026-09-26，(a) 以 git log 实际输出为准）
+
+| 题 | 正确答案 |
+|---|---|
+| (a) 余录当前版本号？sw.js 的 CACHE 值？ | v1.7.1；`yulu-v51` |
+| (b) 用户摘录数据存在哪个仓库哪个文件？同步码？ | crystal236102087/**yulu-sync**（私有）的 `data/YL-BXBD-EAT7.json`；同步码 **YL-BXBD-EAT7** |
+| (c) 改 index.html 要升 CACHE 版本号吗？ | **不用**（导航 network-first，推送后用户自动拿新版）；只有改 sw.js 本身才升 |
+| (d) 书架网格为何用内置 CSS？书封字号为何 JS 换算 px 而不用 cqw？ | Tailwind CDN 国内慢、加载时序不确定 → 布局量错锁死（v1.7.1 书封全崩）；iOS Safari 解析 cqw 异常（v1.7 错位事故）→ 渲染后按实测宽度换算 px + ResizeObserver 自愈 |
+| (e) gh-proxy.com 的 API 查询可信吗？权威验证用什么？ | **不可信**（缓存污染，返回过其他用户的账号）；只用 git 协议：`git ls-remote` / `git push --dry-run` |
+| (f) token 能写进 index.html 等公开文件吗？ | **严禁**。token 只存在用户手机 localStorage 和 remote URL，绝不入仓 |
 
 ## 用户偏好（重要）
 
